@@ -1,0 +1,29 @@
+VESTIGE STOCK — ANDROID APP SOURCE
+
+This ZIP contains the app project, not an APK.
+
+TO BUILD ON YOUR WINDOWS PC
+1. Install Android Studio.
+2. In SDK Manager install Android SDK Platform 35 and Build-Tools 35.0.0.
+3. Extract this folder to D:\Vestige-Stock (or another writable folder).
+4. Double-click BUILD-APK.cmd.
+5. After a successful build, install Vestige-Stock-1.0.0-debug.apk on your phone.
+
+PRICING
+Default: Selling price = DP x (1 + GST% / 100) x 1.10.
+DP excludes GST. Enter the GST rate per product.
+Example: DP Rs.100, GST 18% -> selling price Rs.129.80.
+More > Pricing rule also offers true 10% margin: (DP + GST) / 0.90.
+Billing is blocked if the price exceeds the batch MRP.
+
+FIRST USE
+Store details -> Scan/register product -> Receive stock -> Scan and bill.
+Use Check Price on Home to see MRP and selling price without changing stock.
+
+CHECKED HERE
+32 business-logic tests and 5 UI code tests with a mocked Android bridge passed,
+plus Java/JavaScript syntax and XML checks.
+APK compilation, camera, rendered UI and Android PDF saving were not verified
+in this environment. Complete the device checklist after building.
+
+Open README.md for the full setup, features and limitations.

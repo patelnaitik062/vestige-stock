@@ -1,0 +1,23 @@
+VESTIGE STOCK 1.0.0 — VALIDATION RECORD
+
+Automated domain tests: 32 passed, 0 failed.
+UI code tests with mocked Android bridge: 5 passed, 0 failed.
+Total automated tests: 37 passed, 0 failed.
+Command: node --test tests/core.test.cjs tests/ui-smoke.test.cjs
+
+JavaScript syntax: core.js and app.js passed Node syntax checks.
+Java parsing: 4 source files parsed without syntax errors using JDK 17.
+XML: AndroidManifest.xml, styles.xml and ic_app.xml parsed successfully.
+
+NOT VERIFIED HERE:
+Android compilation / dependency API resolution / lint / APK installation.
+Camera hardware and live barcode decoding on an Android device.
+Rendered visual layout, animations and Android system navigation.
+Native PDF generation, PDF layout and Android document saving.
+Actual SQLite/Android lifecycle integration and on-device restore.
+
+Reason: no Android SDK or Gradle installation; download servers timed out.
+The browser rejected both local preview URLs under its URL policy. No alternate
+browser route was used after the explicit policy rejection.
+
+The ZIP is a source project, not an APK. Complete DEVICE-CHECKLIST.md after build.

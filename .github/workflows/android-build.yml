@@ -1,0 +1,52 @@
+name: Build Android APK
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', '**.txt']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Install pinned SDK
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Test domain logic
+        run: node --test tests/core.test.cjs tests/ui-smoke.test.cjs
+      - name: Build and lint
+        run: gradle --no-daemon :app:assembleRelease :app:lintRelease
+      - name: Prepare unsigned APK for private signing
+        run: |
+          mkdir -p build-export
+          cp app/build/outputs/apk/release/app-release-unsigned.apk build-export/Vestige-Stock-1.0.0-unsigned.apk
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" build-export/apksigner.jar
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 build-export/Vestige-Stock-1.0.0-unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging build-export/Vestige-Stock-1.0.0-unsigned.apk > build-export/apk-metadata.txt
+          sha256sum build-export/* > build-export/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vestige-Stock-build
+          path: build-export/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-lint-report
+          path: app/build/reports/lint-results-release.*
+          if-no-files-found: ignore
+          retention-days: 14
