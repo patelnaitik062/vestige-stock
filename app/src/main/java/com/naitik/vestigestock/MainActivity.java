@@ -124,9 +124,10 @@ public final class MainActivity extends ComponentActivity {
             try{JSONObject parsed=new JSONObject(context);String mode=parsed.getString("mode");
                 if(!java.util.Arrays.asList("price","edit","receive","bill","return","adjust","catalog-link").contains(mode))throw new IllegalArgumentException();
                 prefs().edit().putString("scanContext",context).commit();
-                String formats="catalog-link".equals(mode)?ScanOptions.QR_CODE:ScanOptions.ALL_CODE_TYPES;
                 String prompt="catalog-link".equals(mode)?"Scan the catalogue QR code":"Scan one product or internal batch label";
-                pendingScan=new ScanOptions().setCaptureActivity(ScannerActivity.class).setDesiredBarcodeFormats(formats).setOrientationLocked(false).setBeepEnabled(true).setBarcodeImageEnabled(false).setPrompt(prompt);
+                pendingScan=new ScanOptions().setCaptureActivity(ScannerActivity.class).setOrientationLocked(false).setBeepEnabled(true).setBarcodeImageEnabled(false).setPrompt(prompt);
+                if("catalog-link".equals(mode)) pendingScan.setDesiredBarcodeFormats("QR_CODE");
+                else pendingScan.setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES);
                 if(androidx.core.content.ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED) launchScanner();
                 else cameraPermission.launch(Manifest.permission.CAMERA);
             }catch(Exception e){message("Could not open the camera. Allow camera access in Android app settings or use a hardware scanner.");}
