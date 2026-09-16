@@ -122,9 +122,11 @@ public final class MainActivity extends ComponentActivity {
         @JavascriptInterface public void ready(){runOnUiThread(()->{ready=true;try{JSONArray events=new JSONArray(prefs().getString("pendingEvents","[]"));prefs().edit().remove("pendingEvents").apply();for(int i=0;i<events.length();i++)emit(events.getJSONObject(i));}catch(Exception ignored){}});}
         @JavascriptInterface public void scanBarcode(String context){runOnUiThread(()->{
             try{JSONObject parsed=new JSONObject(context);String mode=parsed.getString("mode");
-                if(!java.util.Arrays.asList("price","edit","receive","bill","return","adjust").contains(mode))throw new IllegalArgumentException();
+                if(!java.util.Arrays.asList("price","edit","receive","bill","return","adjust","catalog-link").contains(mode))throw new IllegalArgumentException();
                 prefs().edit().putString("scanContext",context).commit();
-                pendingScan=new ScanOptions().setCaptureActivity(ScannerActivity.class).setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES).setOrientationLocked(false).setBeepEnabled(true).setBarcodeImageEnabled(false).setPrompt("Scan one product or internal batch label");
+                String formats="catalog-link".equals(mode)?ScanOptions.QR_CODE:ScanOptions.ALL_CODE_TYPES;
+                String prompt="catalog-link".equals(mode)?"Scan the catalogue QR code":"Scan one product or internal batch label";
+                pendingScan=new ScanOptions().setCaptureActivity(ScannerActivity.class).setDesiredBarcodeFormats(formats).setOrientationLocked(false).setBeepEnabled(true).setBarcodeImageEnabled(false).setPrompt(prompt);
                 if(androidx.core.content.ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED) launchScanner();
                 else cameraPermission.launch(Manifest.permission.CAMERA);
             }catch(Exception e){message("Could not open the camera. Allow camera access in Android app settings or use a hardware scanner.");}
