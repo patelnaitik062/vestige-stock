@@ -35,6 +35,7 @@ jobs:
       - name: Prepare unsigned APK for private signing
         run: |
           mkdir -p build-export
+          cp app/build/outputs/apk/debug/app-debug.apk build-export/Vestige-Stock-1.1.0-debug.apk
           cp app/build/outputs/apk/release/app-release-unsigned.apk build-export/Vestige-Stock-1.1.0-unsigned.apk
           cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" build-export/apksigner.jar
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 build-export/Vestige-Stock-1.1.0-unsigned.apk
