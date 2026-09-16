@@ -1,0 +1,40 @@
+VESTIGE STOCK 1.1.0 - CATALOGUE UPDATE VALIDATION
+
+Source commit: f445a8e682fc161cc786d75587ae3be6075a8801
+Build run: https://github.com/patelnaitik062/vestige-stock/actions/runs/35075365513
+
+PASSED
+45 JavaScript checks: 32 inventory/pricing, 7 packaged UI, 6 catalogue.
+Release and debug APK compilation; Android integration test APK compilation.
+Android release lint.
+All 253 catalogue entries match the saved official-source snapshot.
+Source category card counts reconcile (255 listed, 2 incomplete packages excluded).
+No guessed DP, GST percentage, physical barcode, initial quantity or selling price.
+Unknown prices block registration; catalogue codes cannot be billed directly.
+Zero-stock linking creates no lots, purchases or stock movements.
+Existing inventory ledger, prices and old backup compatibility preserved.
+Duplicate barcode/catalogue links rejected without partially changing data.
+APK build ZIP digest and included SHA256 checksums verified.
+All five packaged UI assets match the exact local source bytes.
+Release package version 1.1.0 / code 2, min Android 8, no Internet permission,
+and not debuggable. Signature v2/v3 verified with the original owner's key.
+Catalogue PDF: 27 pages, all 253 codes present, 254 official-source links.
+Cover and representative pages visually reviewed with no layout defects.
+
+APK SHA-256: d6fafa783ea360507b6d7cb28da4254599f54a54b7e53f9a7a0b2a2c3db9548b
+Signer certificate SHA-256: 0523b111c72352aa60a74a63dd4f10c305b9c5da172bad76aabcf05eaed26e2f
+
+ANDROID EMULATOR: 4 tests passed on Android 15 / API 35.
+49 automated checks passed in total.
+The new catalogue test verified rendered preloaded entries, scan-result routing,
+empty DP/GST fields before confirmation, registration via the actual form into
+SQLite, zero stock/no lots, and the saved link after Activity recreation.
+Existing navigation, settings, revision-conflict, scanner-Activity launch and
+invoice/batch-label PDF rendering checks also passed.
+The optional screenshot export was unavailable after test app cleanup; it was
+not used as visual verification.
+
+REMAINING PHYSICAL-DEVICE CHECKS
+Real pack barcode and printed/screen QR decoding with the owner's phone camera.
+Bluetooth/USB scanner behavior and document-picker exports on the owner's phone.
+User's current invoice DP, GST rates and printed batch MRPs must be confirmed.

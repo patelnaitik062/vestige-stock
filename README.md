@@ -191,22 +191,23 @@ Uninstalling the app deletes its local data.
 
 ## Current limits and validation status
 
-Version 1.1.0 adds the preloaded catalogue. Its 45 JavaScript checks pass locally;
-the cloud Android build and four integration checks are in progress. The record
-below describes the previously delivered 1.0.0 release and will be updated after
-the 1.1.0 build completes.
+Version 1.1.0 compiled successfully and Android lint passed in
+[GitHub Actions run 35075365513](https://github.com/patelnaitik062/vestige-stock/actions/runs/35075365513).
+The signed release APK uses the original owner's certificate and version code 2,
+so it can update version 1.0.0 without uninstalling. Android's apksigner verified
+its v2/v3 signatures, and all packaged UI assets match the built source.
 
+**49 automated checks passed:** 32 inventory/pricing tests, 6 catalogue tests,
+7 packaged UI tests, and 4 Android integration tests on an Android 15 emulator.
+The new Android test follows physical-pack scan result -> catalogue QR result ->
+confirmed product form -> SQLite save, checks zero stock/no lots, and verifies
+that the catalogue link survives Activity recreation. Existing scanner launch,
+navigation, persistence and invoice/batch-label PDF checks also passed.
 
-The release APK was compiled successfully and Android lint passed in
-[GitHub Actions run 34999783816](https://github.com/patelnaitik062/vestige-stock/actions/runs/34999783816).
-The delivered APK was signed with the owner's private key; Android's apksigner
-verified its v2 and v3 signatures. Packaged web assets match the source files.
-
-**40 automated checks passed:** 32 domain tests, 5 UI code tests, and 3 Android
-integration tests on an Android 15 (API 35) emulator. Native checks covered app
-startup, bottom navigation, saved store settings across Activity recreation,
-SQLite revision conflict protection, native scanner Activity launch, multipage
-invoice PDF rendering, and internal batch-label PDF rendering.
+The companion catalogue PDF includes all 253 setup codes and source links;
+its cover and representative product pages were visually reviewed.
+See `docs/VALIDATION-1.1.0.txt` for details; `docs/VALIDATION.txt` retains the
+previous 1.0.0 release record.
 
 Physical camera decoding on real product packs, visual layout on the owner's
 phone, Bluetooth/USB scanners, and Android document-picker exports still need
