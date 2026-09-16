@@ -1,8 +1,10 @@
 package com.naitik.vestigestock;
 
 import android.annotation.SuppressLint;
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -50,6 +52,12 @@ public final class MainActivity extends ComponentActivity {
             catch(Exception e){message("Could not read barcode. Please scan again.");}
         }else message("Scan cancelled. No stock changed.");
     });
+    private final ActivityResultLauncher<String> cameraPermission=registerForActivityResult(
+        new ActivityResultContracts.RequestPermission(),granted->{
+            if(granted) launchScanner();
+            else message("Camera permission is required to scan. Allow it in Android app settings and try again.");
+        });
+    private ScanOptions pendingScan;
     private final ActivityResultLauncher<Intent> createDocument=registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),result->{
         if(result.getResultCode()!=RESULT_OK||result.getData()==null||result.getData().getData()==null){exportBusy.set(false);message("Export cancelled. Your data is still saved.");return;}
         Uri destination=result.getData().getData();
@@ -106,6 +114,7 @@ public final class MainActivity extends ComponentActivity {
     private JSONObject find(JSONArray array,String id)throws Exception{for(int i=0;i<array.length();i++){JSONObject item=array.getJSONObject(i);if(id.equals(item.getString("id")))return item;}throw new IllegalArgumentException("Record not found.");}
     private boolean beginExport(){if(!exportBusy.compareAndSet(false,true)){message("Finish the current export first.");return false;}return true;}
     private void chooseDestination(String name,String mime){runOnUiThread(()->{Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(mime).putExtra(Intent.EXTRA_TITLE,name);createDocument.launch(intent);});}
+    private void launchScanner(){if(pendingScan!=null){ScanOptions options=pendingScan;pendingScan=null;scanner.launch(options);}}
 
     private final class Bridge {
         @JavascriptInterface public String loadState(){try{String json=store.read();return new JSONObject().put("state",json==null?JSONObject.NULL:new JSONObject(json)).toString();}catch(Exception e){return "{\"error\":\"Could not read store data. Existing data has not been changed.\"}";}}
@@ -114,7 +123,10 @@ public final class MainActivity extends ComponentActivity {
         @JavascriptInterface public void scanBarcode(String context){runOnUiThread(()->{
             try{JSONObject parsed=new JSONObject(context);String mode=parsed.getString("mode");
                 if(!java.util.Arrays.asList("price","edit","receive","bill","return","adjust").contains(mode))throw new IllegalArgumentException();
-                prefs().edit().putString("scanContext",context).commit();ScanOptions options=new ScanOptions().setCaptureActivity(ScannerActivity.class).setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES).setOrientationLocked(false).setBeepEnabled(true).setBarcodeImageEnabled(false).setPrompt("Scan one product or internal batch label");scanner.launch(options);
+                prefs().edit().putString("scanContext",context).commit();
+                pendingScan=new ScanOptions().setCaptureActivity(ScannerActivity.class).setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES).setOrientationLocked(false).setBeepEnabled(true).setBarcodeImageEnabled(false).setPrompt("Scan one product or internal batch label");
+                if(androidx.core.content.ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED) launchScanner();
+                else cameraPermission.launch(Manifest.permission.CAMERA);
             }catch(Exception e){message("Could not open the camera. Allow camera access in Android app settings or use a hardware scanner.");}
         });}
         @JavascriptInterface public void exportInvoice(String id){if(!beginExport())return;io.execute(()->{try{JSONObject invoice=find(new JSONObject(store.read()).getJSONArray("sales"),id);try(OutputStream out=new FileOutputStream(pendingFile())){InvoicePdf.write(invoice,out);}chooseDestination(invoice.getString("number")+".pdf","application/pdf");}catch(Exception e){exportBusy.set(false);message("Could not generate PDF. Your completed bill is saved; retry from Activity.");}});}
