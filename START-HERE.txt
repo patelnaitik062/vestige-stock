@@ -1,29 +1,35 @@
-VESTIGE STOCK — ANDROID APP SOURCE
+VESTIGE STOCK - INSTALL THE ANDROID APP
 
-This ZIP contains the app project, not an APK.
+You do not need Android Studio to install the delivered app.
 
-TO BUILD ON YOUR WINDOWS PC
-1. Install Android Studio.
-2. In SDK Manager install Android SDK Platform 35 and Build-Tools 35.0.0.
-3. Extract this folder to D:\Vestige-Stock (or another writable folder).
-4. Double-click BUILD-APK.cmd.
-5. After a successful build, install Vestige-Stock-1.0.0-debug.apk on your phone.
+1. Download Vestige-Stock-1.0.0.apk from the completed ChatGPT task.
+2. Open the APK on your Android phone (Android 8.0 or newer).
+3. Allow installation from the app opening the file if Android asks.
+4. Tap Install, then Open.
+
+FIRST USE
+More > Store details: enter your store name and contact information.
+Home > Add product: scan a pack barcode, then enter the product details.
+Receive stock: scan the product, enter quantity, purchase DP and batch details.
+Home > Check price: scan to view MRP and the calculated selling price.
+Billing: scan products, complete the bill, then save its PDF.
 
 PRICING
 Default: Selling price = DP x (1 + GST% / 100) x 1.10.
-DP excludes GST. Enter the GST rate per product.
+DP excludes GST. Enter the GST rate for each product.
 Example: DP Rs.100, GST 18% -> selling price Rs.129.80.
 More > Pricing rule also offers true 10% margin: (DP + GST) / 0.90.
-Billing is blocked if the price exceeds the batch MRP.
+Billing is blocked if the calculated price exceeds the batch MRP.
 
-FIRST USE
-Store details -> Scan/register product -> Receive stock -> Scan and bill.
-Use Check Price on Home to see MRP and selling price without changing stock.
+YOUR DATA
+The app starts with no products or stock. Your entries stay on the phone.
+Export regular backups from More > Export backup.
+Uninstalling the app removes its local data.
 
-CHECKED HERE
-32 business-logic tests and 5 UI code tests with a mocked Android bridge passed,
-plus Java/JavaScript syntax and XML checks.
-APK compilation, camera, rendered UI and Android PDF saving were not verified
-in this environment. Complete the device checklist after building.
+FUTURE UPDATES
+Keep Vestige-Stock-PRIVATE-Signing-Backup.zip private and safe. It is needed to
+sign compatible updates; it is not needed to install or run the app.
+The GitHub build artifact is unsigned and must be signed before installation.
+The final APK provided in the ChatGPT task has completed the signing step.
 
-Open README.md for the full setup, features and limitations.
+README.md explains features and limits. docs/VALIDATION.txt records test status.

@@ -164,22 +164,23 @@ Uninstalling the app deletes its local data.
 
 ## Current limits and validation status
 
-- **32 domain tests passed** in this environment: rounding, barcode identity,
-  purchases, sales, cost snapshots, duplicate completion, stock limits, expiry,
-  batch selection, returns, and backup reconciliation.
-- **5 UI event/render smoke tests passed** using a mocked Android bridge (37
-  automated tests total). These execute the packaged UI code without a browser;
-  they do not verify rendered pixels, the physical camera or Android APIs.
-- Both application JavaScript files passed Node syntax checks.
-- All four Java files passed a Java parser check; Android classes/dependencies
-  could not be resolved here, so this is not a successful Android compilation.
-- Manifest and resource XML were parsed successfully.
-- APK compilation and Android lint were **not run successfully** because the
-  Android SDK/Gradle were unavailable and download servers were unreachable.
-- The browser's URL policy blocked the local preview. Visual layout, actual
-  navigation behavior, camera decoding, Android document saving and PDF output
-  still require device/emulator verification. No screenshot is presented as a
-  verified app rendering.
+The release APK was compiled successfully and Android lint passed in
+[GitHub Actions run 34999783816](https://github.com/patelnaitik062/vestige-stock/actions/runs/34999783816).
+The delivered APK was signed with the owner's private key; Android's apksigner
+verified its v2 and v3 signatures. Packaged web assets match the source files.
+
+**40 automated checks passed:** 32 domain tests, 5 UI code tests, and 3 Android
+integration tests on an Android 15 (API 35) emulator. Native checks covered app
+startup, bottom navigation, saved store settings across Activity recreation,
+SQLite revision conflict protection, native scanner Activity launch, multipage
+invoice PDF rendering, and internal batch-label PDF rendering.
+
+Physical camera decoding on real product packs, visual layout on the owner's
+phone, Bluetooth/USB scanners, and Android document-picker exports still need
+on-device verification. The emulator tests ran the debug variant from the same
+source; the delivered release variant disables WebView debugging. No real
+inventory or demonstration stock is preloaded.
+
 - Version 1 assumes one operator. Separate admin/cashier accounts, multi-device
   synchronization, catalog imports, supplier returns, purchase reversals, product
   photos, credit sales and operating-expense accounting are not implemented.
@@ -187,9 +188,9 @@ Uninstalling the app deletes its local data.
   workflow (HSN/SAC, place of supply, CGST/SGST/IGST allocation, etc.) has not been
   implemented. Enter actual product rates; review receipt requirements for your
   business before using it as a tax invoice.
-- The debug APK build is for installation/testing on your device. A signed
-  release and store submission are separate steps. Keep the same application ID
-  and signing key for future updates, and back up before installing updates.
+- The delivered file is a signed release APK for direct installation. It has
+  not been submitted to Google Play. Keep the same application ID and signing
+  key for future updates, and back up before installing updates.
 
 See `docs/DEVICE-CHECKLIST.md` for the remaining checks.
 

@@ -1,23 +1,45 @@
-VESTIGE STOCK 1.0.0 — VALIDATION RECORD
+VESTIGE STOCK 1.0.0 - VALIDATION RECORD
 
-Automated domain tests: 32 passed, 0 failed.
-UI code tests with mocked Android bridge: 5 passed, 0 failed.
-Total automated tests: 37 passed, 0 failed.
-Command: node --test tests/core.test.cjs tests/ui-smoke.test.cjs
+Build source commit: 2f09aa5b1e6cdafe633172088dd9ff18dbc8d0e3
+GitHub Actions run: https://github.com/patelnaitik062/vestige-stock/actions/runs/34999783816
+Build completed: 2026-09-15 UTC
 
-JavaScript syntax: core.js and app.js passed Node syntax checks.
-Java parsing: 4 source files parsed without syntax errors using JDK 17.
-XML: AndroidManifest.xml, styles.xml and ic_app.xml parsed successfully.
+PASSED
+32 inventory/pricing domain tests.
+5 UI code tests with a mocked Android bridge.
+3 Android instrumented integration tests on an Android 15 / API 35 emulator.
+40 automated tests total; no failures or skipped Android tests.
+Android release and debug compilation, including Android test APK compilation.
+Android release lint: no errors. Non-blocking warnings remain for dependency
+updates, target API, orientation, synchronous preferences and backup options.
+Unsigned APK alignment verification.
+Downloaded build archive SHA-256 matched the GitHub artifact digest.
+Packaged app.js, core.js, style.css and index.html match their source bytes.
+Signed release APK verified using APK Signature Schemes v2 and v3.
+Release package has no Internet permission and is not debuggable.
 
-NOT VERIFIED HERE:
-Android compilation / dependency API resolution / lint / APK installation.
-Camera hardware and live barcode decoding on an Android device.
-Rendered visual layout, animations and Android system navigation.
-Native PDF generation, PDF layout and Android document saving.
-Actual SQLite/Android lifecycle integration and on-device restore.
+ANDROID INTEGRATION COVERAGE
+Native WebView app startup and bottom navigation.
+Saving store settings through the JavaScript bridge into SQLite.
+Reloading saved settings after Activity recreation.
+Rejecting stale SQLite writes through the native bridge.
+Launching the native barcode scanner Activity and returning to the app.
+Rendering a 60-line invoice as multiple PDF pages with Android PdfRenderer.
+Rendering an internal QR batch-label PDF with Android PdfRenderer.
 
-Reason: no Android SDK or Gradle installation; download servers timed out.
-The browser rejected both local preview URLs under its URL policy. No alternate
-browser route was used after the explicit policy rejection.
+DELIVERED APK
+Filename: Vestige-Stock-1.0.0.apk
+Application ID: com.naitik.vestigestock
+Version name / code: 1.0.0 / 1
+Minimum Android: 8.0 (API 26)
+Target Android API: 35
+APK SHA-256: 88f20f9739d033f700aa5891f0052033d5dd954f0576f869933dcbb3439c4d12
+Signer certificate SHA-256: 0523b111c72352aa60a74a63dd4f10c305b9c5da172bad76aabcf05eaed26e2f
 
-The ZIP is a source project, not an APK. Complete DEVICE-CHECKLIST.md after build.
+REMAINING DEVICE CHECKS
+Physical barcode decoding with the owner's camera and real product packs.
+Visual layout, animation smoothness and keyboard behavior on the owner's phone.
+Android document-picker export and reopening saved PDF/backup files.
+Bluetooth/USB keyboard scanners and full backup/restore on the device.
+The emulator exercised the debug variant; release signing and package contents
+were independently checked. See DEVICE-CHECKLIST.md for hands-on checks.
