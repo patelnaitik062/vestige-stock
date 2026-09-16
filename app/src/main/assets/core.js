@@ -91,11 +91,14 @@
   function productInput(p) {
     const barcode = String(p.barcode || '');
     assert(barcode.length && barcode.length <= 160 && !/[\x00-\x1f]/.test(barcode), 'Scan a valid barcode.');
+    assert(!barcode.startsWith('VSCAT:'), 'Catalogue QR codes identify catalogue entries. Scan the barcode on the physical pack first.');
+    const catalogCode = p.catalogCode || '';
+    assert(typeof catalogCode === 'string' && (!catalogCode || /^[A-Z0-9]{2,20}$/.test(catalogCode)), 'Invalid catalogue reference.');
     assert(text(p.name).length, 'Product name is required.');
     assert(p.dp > 0 && p.mrp > 0, 'DP and MRP must be greater than zero.');
     integer(p.dp, 'DP'); integer(p.mrp, 'MRP'); integer(p.gstBps, 'GST percentage', 10000);
     integer(p.reorder ?? 5, 'reorder level', 1000000);
-    return { barcode, name: text(p.name), pack: text(p.pack, 60), category: text(p.category, 60), dp: p.dp,
+    return { barcode, ...(catalogCode ? {catalogCode} : {}), name: text(p.name), pack: text(p.pack, 60), category: text(p.category, 60), dp: p.dp,
       mrp: p.mrp, gstBps: p.gstBps, reorder: p.reorder ?? 5, expiryRequired: !!p.expiryRequired, active: p.active !== false };
   }
   function total(s) {
@@ -110,6 +113,7 @@
         const input = productInput(c.product);
         const current = s.products.find(p => p.id === c.product.id);
         assert(!s.products.some(p => p.barcode === input.barcode && p.id !== current?.id) && !s.lots.some(l => l.code === input.barcode), 'This barcode is already registered.');
+        assert(!input.catalogCode || !s.products.some(p => p.catalogCode === input.catalogCode && p.id !== current?.id), 'This catalogue product is already linked to a pack barcode.');
         if (current) {
           assert(current.barcode === input.barcode, 'The registered barcode cannot be changed.');
           const before = clone(current); Object.assign(current, input, { updated: now });
@@ -251,8 +255,10 @@
     integer(s.revision, 'backup version');
     for (const key of ['products','lots','purchases','sales','returns','movements','audit']) assert(Array.isArray(s[key]), `Backup missing ${key}.`);
     assert(s.settings && ['markup','margin'].includes(s.settings.pricingMode), 'Invalid backup settings.');
-    const productIds = new Set(), codes = new Set(), lotIds = new Set();
-    s.products.forEach(p => { productInput(p); assert(typeof p.id === 'string' && !productIds.has(p.id) && !codes.has(p.barcode), 'Duplicate product in backup.'); productIds.add(p.id); codes.add(p.barcode); });
+    const productIds = new Set(), codes = new Set(), lotIds = new Set(), catalogCodes = new Set();
+    s.products.forEach(p => { productInput(p); assert(typeof p.id === 'string' && !productIds.has(p.id) && !codes.has(p.barcode), 'Duplicate product in backup.');
+      assert(!p.catalogCode || !catalogCodes.has(p.catalogCode), 'Duplicate catalogue link in backup.');
+      if(p.catalogCode)catalogCodes.add(p.catalogCode); productIds.add(p.id); codes.add(p.barcode); });
     s.lots.forEach(l => {
       assert(productIds.has(l.productId) && typeof l.id === 'string' && !lotIds.has(l.id) && typeof l.code === 'string' && !codes.has(l.code), 'Invalid batch references.');
       integer(l.qty, 'batch quantity', 1000000); integer(l.quarantine, 'quarantine quantity', 1000000); quote(l, s.settings);

@@ -1,3 +1,17 @@
+VESTIGE STOCK 1.1.0 - CATALOGUE UPDATE
+
+Install the signed 1.1.0 APK over 1.0.0; do not uninstall the existing app.
+253 official product entries are preloaded at zero stock. Existing data is kept.
+
+To set up a new pack:
+1. Scan its physical barcode.
+2. Choose Scan catalogue QR and scan the matching code from the supplied PDF.
+3. Confirm the product/pack, purchase DP before GST, GST percentage and pack MRP.
+4. Save. Stock stays zero until Receive stock is confirmed.
+
+Catalogue QRs are app references, not manufacturer barcodes. Public source data
+includes names, packs and MRP only. DP and GST must come from your invoice.
+
 VESTIGE STOCK - INSTALL THE ANDROID APP
 
 You do not need Android Studio to install the delivered app.

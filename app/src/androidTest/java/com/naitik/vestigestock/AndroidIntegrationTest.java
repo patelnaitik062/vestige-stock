@@ -101,6 +101,31 @@ public class AndroidIntegrationTest {
             return renderer.getPageCount();
         }
     }
+    @Test public void catalogueLinksPhysicalBarcodeAtZeroStock()throws Exception {
+        Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        try(ActivityScenario<MainActivity> scenario=ActivityScenario.launch(MainActivity.class)) {
+            awaitTrue(scenario,"!!document.querySelector('[data-mode=price]')");
+            js(scenario,"document.querySelector('.bottomnav [data-page=products]').click()");
+            awaitTrue(scenario,"document.body.innerText.includes('253 official product listings') && document.body.innerText.includes('0 in stock')");
+            Bitmap screenshot=InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+            assertNotNull(screenshot);
+            try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),"catalogue-products.png"))){screenshot.compress(Bitmap.CompressFormat.PNG,100,out);}
+            screenshot.recycle();
+            js(scenario,"window.onNativeEvent({type:'scan',code:'TEST-CATALOG-AMLA',context:JSON.stringify({mode:'edit'})})");
+            awaitTrue(scenario,"!!document.querySelector('[data-action=catalog-link]')");
+            js(scenario,"document.querySelector('[data-action=catalog-link]').click()");
+            awaitTrue(scenario,"document.querySelector('[role=dialog]').getAttribute('aria-label')==='Scan catalogue QR'");
+            js(scenario,"window.onNativeEvent({type:'scan',code:'VSCAT:Y20025',context:JSON.stringify({mode:'catalog-link',barcode:'TEST-CATALOG-AMLA'})})");
+            awaitTrue(scenario,"!!document.querySelector('#product-form')");
+            assertEquals("true",js(scenario,"document.querySelector('[name=dp]').value==='' && document.querySelector('[name=gst]').value==='' && document.querySelector('[name=name]').value==='Vestige Amla 60 Capsules'"));
+            js(scenario,"document.querySelector('[name=dp]').value='100';document.querySelector('[name=gst]').value='18';document.querySelector('#product-form').requestSubmit()");
+            awaitTrue(scenario,"JSON.parse(Android.loadState()).state.products.some(p=>p.barcode==='TEST-CATALOG-AMLA'&&p.catalogCode==='Y20025')");
+            assertEquals("true",js(scenario,"(()=>{const s=JSON.parse(Android.loadState()).state,p=s.products.find(p=>p.barcode==='TEST-CATALOG-AMLA');return p.dp===10000&&p.gstBps===1800&&StockCore.stock(s,p.id)===0&&!s.lots.some(l=>l.productId===p.id)&&!VestigeCatalog.pending(s).some(c=>c.code==='Y20025')})()"));
+            scenario.recreate();
+            awaitTrue(scenario,"!!document.querySelector('[data-mode=price]')");
+            assertEquals("true",js(scenario,"JSON.parse(Android.loadState()).state.products.some(p=>p.barcode==='TEST-CATALOG-AMLA'&&p.catalogCode==='Y20025')"));
+        }
+    }
     @Test public void multipageInvoiceRendersOnAndroid()throws Exception {
         Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
         JSONArray lines=new JSONArray();

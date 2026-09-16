@@ -29,7 +29,7 @@ application ID, and increase `versionCode` for each release.
 5. The helper locates Android Studio/your SDK, downloads Gradle 8.11.1 from its
    official server, checks its published SHA-256, and builds/lints the app.
 6. If the build succeeds, the installable file is
-   **Vestige-Stock-1.0.0-debug.apk** in the project folder. Copy it to your phone
+   **Vestige-Stock-1.1.0-debug.apk** in the project folder. Copy it to your phone
    and open it. Android may ask you to allow installation from the app used to
    open the APK.
 
@@ -49,10 +49,33 @@ After the helper succeeds, the standard Gradle wrapper is generated and you can
 open the project in Android Studio. Alternatively, install Gradle 8.11.1 and run
 `gradle :app:assembleDebug :app:lintDebug` from the project folder.
 
+## Preloaded catalogue
+
+The Products screen includes 253 product listings collected from the
+[official Vestige India store](https://www.myvestige.com/sitemap) on 16 September
+2026, across 12 categories. Names, pack sizes and tax-inclusive reference MRPs
+come from public product cards. Two MCI startup-package listings were excluded
+because their pack sizes are blank and MRPs are zero placeholders.
+
+The catalogue is bundled offline. It does not overwrite existing products,
+stock, purchase history or invoices. Catalogue entries appear under **Preloaded -
+awaiting setup** until a real pack barcode and prices are confirmed. Reference
+MRPs may differ from the printed batch MRP; the pack value takes priority.
+
+The supplied catalogue PDF uses `VSCAT:` setup QR codes. These are app reference
+identifiers, not manufacturer barcodes. Scan the physical pack first, then its
+matching catalogue QR. No product-name search is added. Existing registered
+products can be linked from their scanned details screen without changing their
+saved prices or stock. Backups preserve catalogue links.
+
+DP, GST rates and manufacturer barcode mappings were not available in the public
+listings and are never guessed. Use your current purchase invoice to confirm
+DP before GST and the applicable rate. See `catalogue/README.md` for provenance.
+
 ## Your DP, GST and 10% rule
 
 DP is interpreted as **excluding GST**. Enter the actual GST percentage for each
-product; no Vestige catalog or GST rate is assumed or preloaded.
+product. The reference catalogue does not supply DP or GST rates.
 
 The default selling price is:
 
@@ -85,8 +108,11 @@ when a product or store setting changes.
 ## First use
 
 1. Open **More > Store details** and enter your store name/contact information.
-2. Choose **Add product**, open the camera, and scan a real pack barcode. Enter
-   name, pack size, DP before GST, MRP, GST percentage, and expiry preference.
+2. Choose **Add product**, open the camera, and scan a real pack barcode. Choose
+   **Scan catalogue QR** and scan the matching setup QR from the supplied PDF
+   on another screen or a printed page. Confirm the name/pack, DP before GST,
+   printed MRP and GST percentage. Saving leaves stock at zero. Unlisted products
+   can still be registered from their scanned pack barcode.
 3. Open **Receive stock**. Scan the product, enter quantity, actual purchase DP,
    printed batch MRP, batch number and expiry. Add it to the receipt.
 4. Scan any other incoming products and **Confirm receipt**. Mark existing stock
@@ -96,8 +122,9 @@ when a product or store setting changes.
    after collecting payment. Use **Save PDF invoice** to choose a destination.
 7. Open **Activity** to re-export old bills or review receipts.
 
-The app starts empty. It does not invent product names, barcodes, prices,
-customers or sales. Registration and numeric fields use normal controls;
+The app includes 253 official Vestige India reference products at zero stock.
+DP, GST rates and physical pack barcodes stay unset until confirmed. Existing
+store data is retained; the reference catalogue never creates purchases or sales. Registration and numeric fields use normal controls;
 product identification always uses scanning, with no product-name search.
 
 ## Scanning and batches
@@ -164,6 +191,12 @@ Uninstalling the app deletes its local data.
 
 ## Current limits and validation status
 
+Version 1.1.0 adds the preloaded catalogue. Its 45 JavaScript checks pass locally;
+the cloud Android build and four integration checks are in progress. The record
+below describes the previously delivered 1.0.0 release and will be updated after
+the 1.1.0 build completes.
+
+
 The release APK was compiled successfully and Android lint passed in
 [GitHub Actions run 34999783816](https://github.com/patelnaitik062/vestige-stock/actions/runs/34999783816).
 The delivered APK was signed with the owner's private key; Android's apksigner
@@ -182,7 +215,7 @@ source; the delivered release variant disables WebView debugging. No real
 inventory or demonstration stock is preloaded.
 
 - Version 1 assumes one operator. Separate admin/cashier accounts, multi-device
-  synchronization, catalog imports, supplier returns, purchase reversals, product
+  synchronization, arbitrary catalogue-file imports, supplier returns, purchase reversals, product
   photos, credit sales and operating-expense accounting are not implemented.
 - The PDF is a sales receipt. A jurisdiction-specific statutory GST tax-invoice
   workflow (HSN/SAC, place of supply, CGST/SGST/IGST allocation, etc.) has not been
@@ -221,7 +254,7 @@ UI development; camera/PDF actions need the Android host.
 With Node installed:
 
 ```sh
-node --test tests/core.test.cjs tests/ui-smoke.test.cjs
+node --test tests/*.test.cjs
 node scripts/preview.cjs
 ```
 
