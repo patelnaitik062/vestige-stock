@@ -9,6 +9,7 @@ test('bundled catalogue matches verified source facts and excludes zero-MRP pack
 });
 test('website item codes never automatically resolve as physical product barcodes',()=>{
  const s=C.fresh();assert.equal(K.lookup('Y20025'),null);assert.equal(K.lookup('8900000000000'),null);assert.equal(C.resolve(s,'Y20025').product,undefined);
+ assert.equal(K.lookup('  VSCAT:y20025\r\n '),K.lookup('VSCAT:Y20025'));assert.equal(C.resolve(s,'  Y20025 ').product,undefined);
  assert.throws(()=>C.apply(s,{type:'SCAN_SALE',code:'VSCAT:Y20025'}),/not registered/);
 });
 test('unknown prices stay unset and registration cannot produce a free-price sale',()=>{

@@ -14,7 +14,7 @@ test('requested formula: DP 100 + GST 18% + 10% uplift = 129.80',()=>{const q=C.
 test('true ten percent margin is a distinct 131.11 result',()=>assert.equal(C.quote(product,{pricingMode:'margin'}).selling,13111));
 test('zero GST and decimal prices round deterministically in paise',()=>{assert.equal(C.quote({...product,dp:10005,gstBps:0},{pricingMode:'markup'}).selling,11006);assert.equal(C.cents('129.8'),12980);assert.equal(C.rate('5.25'),525);});
 test('reject malformed amounts, negative values and excess precision',()=>{for(const value of ['-1','NaN','1e3','12.999','','Infinity'])assert.throws(()=>C.cents(value));});
-test('leading-zero barcode preserves identity and does not match truncated barcode',()=>{const s=setup();assert.equal(C.resolve(s,'0012345678905\r\n').product.id,s.products[0].id);assert.equal(C.resolve(s,'12345678905').product,undefined);});
+test('leading-zero barcode preserves identity and ignores stray whitespace or line endings',()=>{const s=setup();assert.equal(C.resolve(s,' 0012345678905\r\n ').product.id,s.products[0].id);assert.equal(C.resolve(s,' 12345678905 ').product,undefined);});
 test('duplicate barcode registration is rejected',()=>assert.throws(()=>act(setup(),{type:'SAVE_PRODUCT',product}),/already registered/));
 test('registration alone does not create inventory',()=>{const s=act(C.fresh(),{type:'SAVE_PRODUCT',product});assert.equal(C.stock(s,s.products[0].id,NOW),0);assert.throws(()=>act(s,{type:'SCAN_SALE',code:product.barcode}),/No saleable stock/);});
 test('price checks are read-only',()=>{const s=setup(),before=JSON.stringify(s);C.resolve(s,product.barcode);C.sellingQuote(s,s.lots[0]);assert.equal(JSON.stringify(s),before);});

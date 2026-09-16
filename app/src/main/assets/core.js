@@ -54,7 +54,7 @@
       purchaseDraft: { id: id(), lines: [], supplier: '', reference: '', opening: false } };
   }
   function resolve(s, raw) {
-    const code = String(raw).replace(/[\r\n]+$/, '');
+    const code = String(raw ?? '').trim().replace(/[\r\n]+$/, '');
     assert(code.length > 0 && code.length <= 160 && !/[\x00-\x1f]/.test(code), 'Invalid barcode. Please scan again.');
     const lot = s.lots.find(l => l.code === code);
     const product = s.products.find(p => p.barcode === code || (lot && p.id === lot.productId));
@@ -89,10 +89,10 @@
     return { product: r.product, lot: lots[0] };
   }
   function productInput(p) {
-    const barcode = String(p.barcode || '');
+    const barcode = String(p.barcode ?? '').trim();
     assert(barcode.length && barcode.length <= 160 && !/[\x00-\x1f]/.test(barcode), 'Scan a valid barcode.');
     assert(!barcode.startsWith('VSCAT:'), 'Catalogue QR codes identify catalogue entries. Scan the barcode on the physical pack first.');
-    const catalogCode = p.catalogCode || '';
+    const catalogCode = String(p.catalogCode ?? '').trim().toUpperCase();
     assert(typeof catalogCode === 'string' && (!catalogCode || /^[A-Z0-9]{2,20}$/.test(catalogCode)), 'Invalid catalogue reference.');
     assert(text(p.name).length, 'Product name is required.');
     assert(p.dp > 0 && p.mrp > 0, 'DP and MRP must be greater than zero.');
@@ -112,8 +112,9 @@
       case 'SAVE_PRODUCT': {
         const input = productInput(c.product);
         const current = s.products.find(p => p.id === c.product.id);
+        const catalogKey = input.catalogCode ? input.catalogCode.toUpperCase() : '';
         assert(!s.products.some(p => p.barcode === input.barcode && p.id !== current?.id) && !s.lots.some(l => l.code === input.barcode), 'This barcode is already registered.');
-        assert(!input.catalogCode || !s.products.some(p => p.catalogCode === input.catalogCode && p.id !== current?.id), 'This catalogue product is already linked to a pack barcode.');
+        assert(!catalogKey || !s.products.some(p => String(p.catalogCode || '').trim().toUpperCase() === catalogKey && p.id !== current?.id), 'This catalogue product is already linked to a pack barcode.');
         if (current) {
           assert(current.barcode === input.barcode, 'The registered barcode cannot be changed.');
           const before = clone(current); Object.assign(current, input, { updated: now });
@@ -257,8 +258,9 @@
     assert(s.settings && ['markup','margin'].includes(s.settings.pricingMode), 'Invalid backup settings.');
     const productIds = new Set(), codes = new Set(), lotIds = new Set(), catalogCodes = new Set();
     s.products.forEach(p => { productInput(p); assert(typeof p.id === 'string' && !productIds.has(p.id) && !codes.has(p.barcode), 'Duplicate product in backup.');
-      assert(!p.catalogCode || !catalogCodes.has(p.catalogCode), 'Duplicate catalogue link in backup.');
-      if(p.catalogCode)catalogCodes.add(p.catalogCode); productIds.add(p.id); codes.add(p.barcode); });
+      const catalogKey = String(p.catalogCode || '').trim().toUpperCase();
+      assert(!catalogKey || !catalogCodes.has(catalogKey), 'Duplicate catalogue link in backup.');
+      if(catalogKey)catalogCodes.add(catalogKey); productIds.add(p.id); codes.add(p.barcode); });
     s.lots.forEach(l => {
       assert(productIds.has(l.productId) && typeof l.id === 'string' && !lotIds.has(l.id) && typeof l.code === 'string' && !codes.has(l.code), 'Invalid batch references.');
       integer(l.qty, 'batch quantity', 1000000); integer(l.quarantine, 'quarantine quantity', 1000000); quote(l, s.settings);
