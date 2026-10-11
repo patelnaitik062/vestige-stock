@@ -72,6 +72,20 @@ public final class MainActivity extends ComponentActivity {
             emit(new JSONObject().put("type","restore").put("text",bytes.toString(StandardCharsets.UTF_8.name())));
         }catch(Exception e){message("Could not read backup. Choose a valid JSON backup under 24 MB.");}});
     });
+    private final ActivityResultLauncher<Intent> openStockCsv=registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),result->{
+        if(result.getResultCode()!=RESULT_OK||result.getData()==null||result.getData().getData()==null)return;
+        Uri source=result.getData().getData();io.execute(()->{try(InputStream in=getContentResolver().openInputStream(source);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
+            if(in==null)throw new IllegalStateException("Cannot open CSV.");copy(in,bytes,2*1024*1024);
+            emit(new JSONObject().put("type","stock-import").put("text",bytes.toString(StandardCharsets.UTF_8.name())));
+        }catch(Exception e){message("Could not read stock CSV. Choose a UTF-8 CSV file smaller than 2 MB.");}});
+    });
+    private final ActivityResultLauncher<Intent> openCatalogueCsv=registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),result->{
+        if(result.getResultCode()!=RESULT_OK||result.getData()==null||result.getData().getData()==null)return;
+        Uri source=result.getData().getData();io.execute(()->{try(InputStream in=getContentResolver().openInputStream(source);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
+            if(in==null)throw new IllegalStateException("Cannot open catalogue CSV.");copy(in,bytes,2*1024*1024);
+            emit(new JSONObject().put("type","catalogue-import").put("text",bytes.toString(StandardCharsets.UTF_8.name())));
+        }catch(Exception e){message("Could not read catalogue CSV. Choose a UTF-8 CSV file smaller than 2 MB.");}});
+    });
 
     private SharedPreferences prefs(){if(session==null)session=getSharedPreferences("ui-session",MODE_PRIVATE);return session;}
     private File pendingFile(){return new File(getCacheDir(),"pending-export.bin");}
@@ -117,6 +131,7 @@ public final class MainActivity extends ComponentActivity {
     private void launchScanner(){if(pendingScan!=null){ScanOptions options=pendingScan;pendingScan=null;scanner.launch(options);}}
 
     private final class Bridge {
+        @JavascriptInterface public String appVersion(){return BuildConfig.VERSION_NAME;}
         @JavascriptInterface public String loadState(){try{String json=store.read();return new JSONObject().put("state",json==null?JSONObject.NULL:new JSONObject(json)).toString();}catch(Exception e){return "{\"error\":\"Could not read store data. Existing data has not been changed.\"}";}}
         @JavascriptInterface public String saveState(String json,long expected){try{store.save(json,expected);return "{\"ok\":true}";}catch(Exception e){try{return new JSONObject().put("ok",false).put("error",e.getMessage()).toString();}catch(Exception ignored){return "{\"ok\":false}";}}}
         @JavascriptInterface public void ready(){runOnUiThread(()->{ready=true;try{JSONArray events=new JSONArray(prefs().getString("pendingEvents","[]"));prefs().edit().remove("pendingEvents").apply();for(int i=0;i<events.length();i++)emit(events.getJSONObject(i));}catch(Exception ignored){}});}
@@ -136,6 +151,9 @@ public final class MainActivity extends ComponentActivity {
         @JavascriptInterface public void exportLotLabel(String id){if(!beginExport())return;io.execute(()->{try{JSONObject state=new JSONObject(store.read()),lot=find(state.getJSONArray("lots"),id),product=find(state.getJSONArray("products"),lot.getString("productId"));try(OutputStream out=new FileOutputStream(pendingFile())){InvoicePdf.label(product,lot,out);}chooseDestination("Batch-"+id+".pdf","application/pdf");}catch(Exception e){exportBusy.set(false);message("Could not create the batch label. Please try again.");}});}
         @JavascriptInterface public void exportBackup(){if(!beginExport())return;io.execute(()->{try{String data=store.read();if(data==null)throw new IllegalStateException();try(OutputStream out=new FileOutputStream(pendingFile())){out.write(data.getBytes(StandardCharsets.UTF_8));}chooseDestination("Vestige-Backup-"+new java.text.SimpleDateFormat("yyyyMMdd-HHmmss",java.util.Locale.ENGLISH).format(new java.util.Date())+".json","application/json");}catch(Exception e){exportBusy.set(false);message("Backup export failed. Your store data is unchanged.");}});}
         @JavascriptInterface public void importBackup(){runOnUiThread(()->openDocument.launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json")));}
+        @JavascriptInterface public void importStockCsv(){runOnUiThread(()->openStockCsv.launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/*").putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"text/csv","text/comma-separated-values","text/plain","application/vnd.ms-excel"})));}
+        @JavascriptInterface public void importCatalogueCsv(){runOnUiThread(()->openCatalogueCsv.launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/*").putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"text/csv","text/comma-separated-values","text/plain","application/vnd.ms-excel"})));}
+        @JavascriptInterface public void exportStockTemplate(){if(!beginExport())return;io.execute(()->{try{try(OutputStream out=new FileOutputStream(pendingFile())){out.write("barcode,quantity,batch,expiry,dp,mrp,gst\n".getBytes(StandardCharsets.UTF_8));}chooseDestination("Vestige-Stock-Import-Template.csv","text/csv");}catch(Exception e){exportBusy.set(false);message("Could not create the stock CSV template. Please try again.");}});}
         @JavascriptInterface public void finishApp(){runOnUiThread(()->finish());}
     }
     @Override protected void onDestroy(){ready=false;if(web!=null){web.removeJavascriptInterface("Android");web.destroy();web=null;}io.shutdown();super.onDestroy();}

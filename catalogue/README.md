@@ -1,29 +1,43 @@
-# Official Vestige India catalogue snapshot
+# Official Vestige India catalogue
 
-Collected 16 September 2026 from the public India store, starting at
-https://www.myvestige.com/sitemap. The JSON includes source URLs for every product
-and every category, counts, collection date, exclusions and price notes.
+`vestige-india-2026-09-16.json` is the historical website-card snapshot.
+`vestige-products-current.json` is the source for the current app bundle. Its
+`fetchedAt` field records when it was refreshed from the official public India
+catalogue endpoint
+(`https://apiv2.veston.in/api/mc/item/getItemListByMultipleFilterWeb`, location
+`WHMP1`). At the current snapshot, 233 of 236 API records have positive MRP and
+DP, published pack details and GST and are bundled. The snapshot includes name, pack, category,
+MRP, DP, GST, distributor price, PV, BV, HSN and source URL. Money and point
+values are stored as integer paise/hundredths. Catalogue records are references,
+not local stock.
 
-- 255 listings were read from 12 official category pages. Card counts matched
-  the displayed category totals.
-- 253 positive-MRP listings with published pack sizes are included.
-- MCI150 and MCI300 are excluded: blank pack size and zero placeholder MRP.
-- Only product facts are copied: name, pack, category, website reference and MRP.
-  Promotional descriptions, health claims and images are not copied.
-- The final segment of the official product URL is used as a website reference.
-  It is NOT represented as a verified retail barcode.
-- MRP is tax-inclusive, stored as integer paise. Printed batch MRP takes priority.
-- DP before GST, GST rate and manufacturer barcodes are unavailable from these
-  public cards. They remain unset. There is no calculated selling price until
-  confirmed by the owner from their invoice and physical pack.
-- No availability or live online stock is imported. All catalogue entries start
-  at zero local stock. Existing store records are never reset or matched by name.
+The public API does not publish manufacturer pack barcodes or NC. No live
+availability is imported, and every new local product begins at zero stock.
+Review current prices against the printed pack and purchase invoice.
 
-The app bundles the same data in `app/src/main/assets/catalogue.js`. Setup QR
-payloads use `VSCAT:<website-reference>`. These populate a registration form only
-after the physical barcode has been scanned. The user checks the product/pack
-and enters DP/GST before saving. The business core rejects incomplete prices,
-duplicate catalogue links and setup QR codes used as physical barcodes.
+Run `python catalogue/refresh-official-catalogue.py` to fetch the official API
+and regenerate the current snapshot, `app/src/main/assets/catalogue.js`, and
+the dated zero-stock import CSV.
+The dated `vestige-products-YYYY-MM-DD.json` files are historical snapshots and
+should not be overwritten. To rebuild from an existing snapshot, run
+`python catalogue/generate-bundled-catalogue.py [snapshot-path]`. The app matches
+`VSCAT:<itemcode>` QRs, but never treats those as physical barcodes. A pack
+barcode must be scanned first. For already registered products, catalogue
+linking adds only the catalogue facts not already stored and does not replace
+their names, prices, stock or transaction history.
+
+The listing PDF can be regenerated from the current snapshot with
+`python catalogue/generate-official-listing.py`; its filename includes the
+snapshot date and each row includes its compatible setup QR. This identifier is
+not a manufacturer barcode.
+
+Generate an app-importable, zero-stock product CSV with
+`python catalogue/generate-zero-stock-import.py`. The dated CSV contains the
+published product values and an explicit `stock` value of `0`, but no physical
+barcodes (the public API does not provide them). In the app, import it from
+**Products > Import zero-stock catalogue CSV**. This adds unlinked catalogue
+records and does not replace the JSON backup or existing store data. Link each
+record to a scanned physical pack barcode before receiving or selling stock.
 
 An existing product can acquire a catalogue reference without changing its
 price, name, barcode, stock or completed transaction history. The bundled reference

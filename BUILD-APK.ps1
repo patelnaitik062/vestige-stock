@@ -47,7 +47,9 @@ Write-Host 'Building Vestige Stock. The first build downloads Android dependenci
 if ($LASTEXITCODE -ne 0) { throw 'Gradle failed. Review the build output above.' }
 $taskApk = Join-Path $PSScriptRoot 'app\build\outputs\apk\debug\app-debug.apk'
 if (-not (Test-Path $taskApk)) { throw 'Build completed without the expected APK. Inspect the Gradle output.' }
-$taskOutput = Join-Path $PSScriptRoot 'Vestige-Stock-1.1.0-debug.apk'
+$taskBuildConfig = [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'app\build.gradle'))
+if ($taskBuildConfig -notmatch "versionName\s+'([^']+)'") { throw 'Could not read versionName from app/build.gradle.' }
+$taskOutput = Join-Path $PSScriptRoot "Vestige-Stock-$($Matches[1])-debug.apk"
 Copy-Item -LiteralPath $taskApk -Destination $taskOutput -Force
 Write-Host "APK created: $taskOutput"
 Write-Host 'Copy this APK to your Android phone and open it to install.'

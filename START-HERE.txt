@@ -1,39 +1,52 @@
-VESTIGE STOCK 1.1.0 - CATALOGUE UPDATE
+VESTIGE STOCK 1.4.0 - ZERO-STOCK CATALOGUE IMPORT
 
-Install the signed 1.1.0 APK over 1.0.0; do not uninstall the existing app.
-253 official product entries are preloaded at zero stock. Existing data is kept.
+Current app source version: 1.4.0 (Android version code 5). This source update
+does not include a newly built APK. Build it with BUILD-APK.cmd as described in
+README.md before installing; do not uninstall the existing app. Existing data
+is kept when updating with the same application ID and signing key.
+233 current official product entries with usable MRP, DP and GST are preloaded at zero stock.
 
 To set up a new pack:
 1. Scan its physical barcode.
 2. Choose Scan catalogue QR and scan the matching code from the supplied PDF.
-3. Confirm the product/pack, purchase DP before GST, GST percentage and pack MRP.
+3. Review the prefilled product, size, MRP, DP, GST, PV, BV and HSN against the pack/invoice.
 4. Save. Stock stays zero until Receive stock is confirmed.
 
 Catalogue QRs are app references, not manufacturer barcodes. Public source data
-includes names, packs and MRP only. DP and GST must come from your invoice.
+includes the shown product values; confirm current prices against your invoice.
 
 VESTIGE STOCK - INSTALL THE ANDROID APP
 
-You do not need Android Studio to install the delivered app.
+You do not need Android Studio to install a matching built APK.
 
-1. Download Vestige-Stock-1.0.0.apk from the completed ChatGPT task.
+1. Obtain the APK built from version 1.4.0. The older 1.1.0 APK is not this update.
 2. Open the APK on your Android phone (Android 8.0 or newer).
 3. Allow installation from the app opening the file if Android asks.
 4. Tap Install, then Open.
 
 FIRST USE
 More > Store details: enter your store name and contact information.
-Home > Add product: scan a pack barcode, then enter the product details.
-Receive stock: scan the product, enter quantity, purchase DP and batch details.
+Home > Add product: scan the physical barcode and matching catalogue QR to prefill details.
+Receive stock: scan a product or import the reviewed CSV template.
 Home > Check price: scan to view MRP and the calculated selling price.
 Billing: scan products, complete the bill, then save its PDF.
 
 PRICING
-Default: Selling price = DP x (1 + GST% / 100) x 1.10.
-DP excludes GST. Enter the GST rate for each product.
-Example: DP Rs.100, GST 18% -> selling price Rs.129.80.
-More > Pricing rule also offers true 10% margin: (DP + GST) / 0.90.
+Billing > Selling plan lets you choose DP + GST, 10% markup or true 10% margin.
+Example: DP Rs.100, GST 18% -> Rs.118, Rs.129.80 or Rs.131.11, respectively.
 Billing is blocked if the calculated price exceeds the batch MRP.
+
+STOCK IMPORT
+Receive stock > CSV template. Fill barcode, quantity, batch and expiry. DP, MRP
+and GST may be blank to use saved product values. Import CSV to preview and
+validate all rows, then confirm the rows on a stock receipt.
+
+ZERO-STOCK PRODUCT CATALOGUE
+Use Products > Import zero-stock catalogue CSV and select
+Vestige-Product-Catalogue-Import-2026-10-10.csv. Review and confirm to add all
+products without stock or invented pack barcodes. Use Link physical pack barcode
+on a product and scan its actual pack before receiving stock or billing. This
+adds products; it does not replace the full JSON backup or existing data.
 
 YOUR DATA
 The app starts with no products or stock. Your entries stay on the phone.

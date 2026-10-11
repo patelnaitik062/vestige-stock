@@ -15,7 +15,8 @@ key. Signing keys and passwords are never committed or uploaded to this reposito
 The delivered signed APK can be opened directly on an Android 8.0+ phone.
 
 Keep the private signing backup for future updates. Reuse the same key and
-application ID, and increase `versionCode` for each release.
+application ID, and increase `versionCode` and `versionName` for every app
+update. The settings screen and APK filenames read the version from Gradle.
 
 ## Build the Android APK on Windows
 
@@ -29,7 +30,8 @@ application ID, and increase `versionCode` for each release.
 5. The helper locates Android Studio/your SDK, downloads Gradle 8.11.1 from its
    official server, checks its published SHA-256, and builds/lints the app.
 6. If the build succeeds, the installable file is
-   **Vestige-Stock-1.1.0-debug.apk** in the project folder. Copy it to your phone
+   **Vestige-Stock-<versionName>-debug.apk** in the project folder (currently
+   **Vestige-Stock-1.4.0-debug.apk**). Copy it to your phone
    and open it. Android may ask you to allow installation from the app used to
    open the APK.
 
@@ -51,16 +53,18 @@ open the project in Android Studio. Alternatively, install Gradle 8.11.1 and run
 
 ## Preloaded catalogue
 
-The Products screen includes 253 product listings collected from the
-[official Vestige India store](https://www.myvestige.com/sitemap) on 16 September
-2026, across 12 categories. Names, pack sizes and tax-inclusive reference MRPs
-come from public product cards. Two MCI startup-package listings were excluded
-because their pack sizes are blank and MRPs are zero placeholders.
+The Products screen includes 233 product records with positive MRP and DP refreshed from the
+[official Vestige India catalogue API](https://www.myvestige.com/allProducts) on
+10 October 2026, across 11 categories. The offline snapshot includes current
+name, size, tax-inclusive MRP, DP, distributor price, PV, BV, GST, HSN and
+product category. Values are a dated reference; verify current batch MRP and
+purchase DP against the physical pack and invoice.
 
 The catalogue is bundled offline. It does not overwrite existing products,
-stock, purchase history or invoices. Catalogue entries appear under **Preloaded -
-awaiting setup** until a real pack barcode and prices are confirmed. Reference
-MRPs may differ from the printed batch MRP; the pack value takes priority.
+stock, purchase history or invoices. Catalogue entries appear under **Preloaded - awaiting setup** until a real pack
+barcode is linked. Scanning that barcode and its matching `VSCAT:` QR prefills
+the published catalogue details. Existing store products, stock, purchase
+history and invoices are retained during updates.
 
 The supplied catalogue PDF uses `VSCAT:` setup QR codes. These are app reference
 identifiers, not manufacturer barcodes. Scan the physical pack first, then its
@@ -68,14 +72,17 @@ matching catalogue QR. No product-name search is added. Existing registered
 products can be linked from their scanned details screen without changing their
 saved prices or stock. Backups preserve catalogue links.
 
-DP, GST rates and manufacturer barcode mappings were not available in the public
-listings and are never guessed. Use your current purchase invoice to confirm
-DP before GST and the applicable rate. See `catalogue/README.md` for provenance.
+Manufacturer barcode mappings and NC are not publicly available. They are not
+guessed or generated. Review the published DP/GST against your purchase invoice.
+Run `python catalogue/refresh-official-catalogue.py` to refresh the official
+snapshot, offline app bundle and dated listing PDF. See `catalogue/README.md`
+for provenance and details.
 
-## Your DP, GST and 10% rule
+## Selling price plans
 
 DP is interpreted as **excluding GST**. Enter the actual GST percentage for each
-product. The reference catalogue does not supply DP or GST rates.
+product. The offline catalogue includes current published DP and GST values; verify
+them against your invoice and the actual product pack.
 
 The default selling price is:
 
@@ -88,12 +95,13 @@ For DP ₹100.00 and GST 18%, the app calculates ₹118.00 cost including GST an
 **₹129.80 selling price**. This is a 10% markup on cost. The example GST rate is
 illustrative only.
 
-If you mean a true 10% profit margin, select **More > Pricing rule > True 10%
-margin**. That uses `(DP + GST) ÷ 0.90`, producing ₹131.11 in the same example.
-The setting always keeps 10%; the two options choose how it is applied.
+Choose a plan from **Billing > Selling plan** or **More > Selling price plan**:
+**DP + GST** (no uplift), **10% markup** using `cost including GST × 1.10`, or
+**true 10% margin** using `(DP + GST) ÷ 0.90`. For DP ₹100 and GST 18%, those
+plans produce ₹118.00, ₹129.80 and ₹131.11, respectively.
 
-Both options produce a GST-inclusive final selling price. Checkout does not add
-GST a second time. Prices are rounded to the nearest paise using integer
+All three plans produce a GST-inclusive final selling price. Checkout does not
+add GST a second time. Prices are rounded to the nearest paise using integer
 arithmetic with half-up rounding. GST on DP and the resulting unit selling price
 are rounded at their respective steps; invoice totals sum saved unit amounts.
 
@@ -105,16 +113,35 @@ to received stock for cost/profit history. Each invoice stores its own prices,
 costs, quantities, customer and store information. Old invoices never recalculate
 when a product or store setting changes.
 
+## Importing stock quickly
+
+From **Receive stock > CSV template**, create a CSV with columns
+`barcode,quantity,batch,expiry,dp,mrp,gst`. Barcode and quantity identify each
+registered product receipt row; batch is required. DP, MRP and GST may be left
+blank to use the saved product values. Select **Import stock CSV** to review the
+parsed receipt. The app validates the whole file before adding any rows; invalid
+rows, unknown/inactive product barcodes, malformed quantities, bad dates, and
+oversized files do not partially change the receipt. Review and confirm the
+resulting receipt to add stock.
+
+To import the published catalogue with no stock, select **Products > Import
+zero-stock catalogue CSV** and choose
+`Vestige-Product-Catalogue-Import-2026-10-10.csv`. Review the preview before
+confirming. Products start without physical barcodes and cannot be scanned for
+stock or billing until you select **Link physical pack barcode** and scan the
+real pack. This adds products without replacing transactions or existing data;
+it is not a full backup. Full store backups are JSON.
+
 ## First use
 
 1. Open **More > Store details** and enter your store name/contact information.
 2. Choose **Add product**, open the camera, and scan a real pack barcode. Choose
    **Scan catalogue QR** and scan the matching setup QR from the supplied PDF
-   on another screen or a printed page. Confirm the name/pack, DP before GST,
-   printed MRP and GST percentage. Saving leaves stock at zero. Unlisted products
-   can still be registered from their scanned pack barcode.
-3. Open **Receive stock**. Scan the product, enter quantity, actual purchase DP,
-   printed batch MRP, batch number and expiry. Add it to the receipt.
+   on another screen or a printed page. Review the name/pack, DP, MRP, GST, PV,
+   BV and HSN. Saving leaves stock at zero. Unlisted products can still be
+   registered from their scanned pack barcode.
+3. Open **Receive stock**. Scan the product and enter quantity, actual purchase
+   DP, printed batch MRP, batch number and expiry, or import a reviewed CSV.
 4. Scan any other incoming products and **Confirm receipt**. Mark existing stock
    as an **opening balance** so it does not inflate purchases in reports.
 5. Use **Check price** on Home to scan and display selling price/MRP.
@@ -122,9 +149,9 @@ when a product or store setting changes.
    after collecting payment. Use **Save PDF invoice** to choose a destination.
 7. Open **Activity** to re-export old bills or review receipts.
 
-The app includes 253 official Vestige India reference products at zero stock.
-DP, GST rates and physical pack barcodes stay unset until confirmed. Existing
-store data is retained; the reference catalogue never creates purchases or sales. Registration and numeric fields use normal controls;
+The app includes 233 current official Vestige India reference products at zero
+stock. Physical pack barcodes are never assumed. Existing store data is retained;
+the reference catalogue never creates purchases or sales. Registration and numeric fields use normal controls;
 product identification always uses scanning, with no product-name search.
 
 ## Scanning and batches
@@ -204,8 +231,15 @@ confirmed product form -> SQLite save, checks zero stock/no lots, and verifies
 that the catalogue link survives Activity recreation. Existing scanner launch,
 navigation, persistence and invoice/batch-label PDF checks also passed.
 
-The companion catalogue PDF includes all 253 setup codes and source links;
-its cover and representative product pages were visually reviewed.
+**Current source status:** version 1.4.0 (version code 5) adds zero-stock
+catalogue CSV import alongside the 1.3.0 catalogue, pricing plans and stock
+receipt import. This revision has not yet been run through the Node tests or an
+Android build. The older 1.1.0 APK in the project is not this update. Install
+Node.js to run the automated tests and Android Studio with SDK Platform 35 /
+Build Tools 35.0.0 to build the current installable APK using `BUILD-APK.cmd`.
+
+The 1.1.0 companion catalogue PDF included 253 setup codes and source links;
+the refreshed 1.3.0 listing contains the latest 233 price-complete records.
 See `docs/VALIDATION-1.1.0.txt` for details; `docs/VALIDATION.txt` retains the
 previous 1.0.0 release record.
 

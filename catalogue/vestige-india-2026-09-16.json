@@ -10,7 +10,7 @@
   "notes": [
     "Reference MRPs include all taxes. Confirm the MRP printed on each received batch.",
     "Website reference codes are not verified pack barcodes. Link the actual pack barcode before registration.",
-    "Distributor prices and GST rates are not supplied by these public listings and remain unset."
+    "The separate official API snapshot supplies DP and GST values used to prefill the app after a physical barcode is scanned. Review published values against the invoice and pack."
   ],
   "categories": [
     {

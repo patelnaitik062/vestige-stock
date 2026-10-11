@@ -41,7 +41,9 @@
     const costInclusive = roundRatio(p.dp, 10000 + p.gstBps, 10000);
     const selling = settings.pricingMode === 'margin'
       ? roundRatio(costInclusive, 10000, 9000)
-      : roundRatio(costInclusive, 11000, 10000);
+      : settings.pricingMode === 'dp'
+        ? costInclusive
+        : roundRatio(costInclusive, 11000, 10000);
     const net = roundRatio(selling, 10000, 10000 + p.gstBps);
     return { dp: p.dp, mrp: p.mrp, gstBps: p.gstBps, gstOnDp: costInclusive - p.dp,
       costInclusive, selling, net, tax: selling - net, profit: net - p.dp,
@@ -88,18 +90,37 @@
     assert(lots[0].qty > 0, 'This batch has no remaining stock.');
     return { product: r.product, lot: lots[0] };
   }
-  function productInput(p) {
+  function productInput(p, allowUnlinkedCatalogue = false) {
     const barcode = String(p.barcode ?? '').trim();
-    assert(barcode.length && barcode.length <= 160 && !/[\x00-\x1f]/.test(barcode), 'Scan a valid barcode.');
-    assert(!barcode.startsWith('VSCAT:'), 'Catalogue QR codes identify catalogue entries. Scan the barcode on the physical pack first.');
+    assert(barcode.length <= 160 && !/[\x00-\x1f]/.test(barcode), 'Scan a valid barcode.');
     const catalogCode = String(p.catalogCode ?? '').trim().toUpperCase();
     assert(typeof catalogCode === 'string' && (!catalogCode || /^[A-Z0-9]{2,20}$/.test(catalogCode)), 'Invalid catalogue reference.');
+    assert(barcode ? !barcode.startsWith('VSCAT:') : allowUnlinkedCatalogue && !!catalogCode,
+      'Scan a physical pack barcode or import an unlinked catalogue product.');
     assert(text(p.name).length, 'Product name is required.');
     assert(p.dp > 0 && p.mrp > 0, 'DP and MRP must be greater than zero.');
     integer(p.dp, 'DP'); integer(p.mrp, 'MRP'); integer(p.gstBps, 'GST percentage', 10000);
     integer(p.reorder ?? 5, 'reorder level', 1000000);
+    const details = {};
+    for (const key of ['distributorPrice', 'pv', 'bv']) {
+      if (p[key] !== undefined && p[key] !== null) details[key] = integer(p[key], key);
+    }
+    const hsn = text(p.hsn, 30);
     return { barcode, ...(catalogCode ? {catalogCode} : {}), name: text(p.name), pack: text(p.pack, 60), category: text(p.category, 60), dp: p.dp,
-      mrp: p.mrp, gstBps: p.gstBps, reorder: p.reorder ?? 5, expiryRequired: !!p.expiryRequired, active: p.active !== false };
+      mrp: p.mrp, gstBps: p.gstBps, ...details, ...(hsn ? {hsn} : {}),
+      reorder: p.reorder ?? 5, expiryRequired: !!p.expiryRequired, active: p.active !== false };
+  }
+  function purchaseInput(s, l, now) {
+    const p = s.products.find(p => p.id === l.productId);
+    assert(p?.active, 'Scan an active registered product.');
+    integer(l.qty, 'quantity', 1000000); assert(l.qty > 0, 'Quantity must be at least one.');
+    assert(l.dp > 0 && l.mrp > 0, 'DP and MRP must be greater than zero.');
+    integer(l.dp, 'DP'); integer(l.mrp, 'MRP'); integer(l.gstBps, 'GST rate', 10000);
+    assert(!l.expiry || validDate(l.expiry), 'Enter a valid expiry date.');
+    assert(!p.expiryRequired || l.expiry, 'This product requires an expiry date.');
+    assert(!l.expiry || l.expiry >= day(now), 'Expired stock cannot be received as saleable stock.');
+    return { id: id(), productId: p.id, name: p.name, barcode: p.barcode, pack: p.pack,
+      qty: l.qty, dp: l.dp, mrp: l.mrp, gstBps: l.gstBps, batch: text(l.batch, 80) || 'Unspecified', expiry: l.expiry || '' };
   }
   function total(s) {
     return s.saleDraft.lines.reduce((n, l) => n + l.quote.selling * l.qty, 0);
@@ -110,13 +131,13 @@
     const movement = (lot, qty, type, reference, reason = '') => s.movements.push({ id: id(), time: now, lotId: lot.id, productId: lot.productId, qty, type, reference, reason });
     switch (c.type) {
       case 'SAVE_PRODUCT': {
-        const input = productInput(c.product);
         const current = s.products.find(p => p.id === c.product.id);
+        const input = productInput(c.product, !!current && !current.barcode);
         const catalogKey = input.catalogCode ? input.catalogCode.toUpperCase() : '';
-        assert(!s.products.some(p => p.barcode === input.barcode && p.id !== current?.id) && !s.lots.some(l => l.code === input.barcode), 'This barcode is already registered.');
+        assert(!input.barcode || !s.products.some(p => p.barcode === input.barcode && p.id !== current?.id) && !s.lots.some(l => l.code === input.barcode), 'This barcode is already registered.');
         assert(!catalogKey || !s.products.some(p => String(p.catalogCode || '').trim().toUpperCase() === catalogKey && p.id !== current?.id), 'This catalogue product is already linked to a pack barcode.');
         if (current) {
-          assert(current.barcode === input.barcode, 'The registered barcode cannot be changed.');
+          assert(current.barcode === input.barcode || (!current.barcode && !!input.barcode), 'The registered barcode cannot be changed.');
           const before = clone(current); Object.assign(current, input, { updated: now });
           audit('PRODUCT_UPDATED', current.id, { before, after: clone(current) });
         } else {
@@ -126,7 +147,7 @@
         break;
       }
       case 'SAVE_SETTINGS': {
-        assert(['markup', 'margin'].includes(c.settings.pricingMode), 'Invalid pricing method.');
+        assert(['dp', 'markup', 'margin'].includes(c.settings.pricingMode), 'Invalid pricing method.');
         const before = clone(s.settings);
         s.settings = { storeName: text(c.settings.storeName) || 'My Vestige Store', address: text(c.settings.address, 360),
           phone: text(c.settings.phone, 40), gstin: text(c.settings.gstin, 30), pricingMode: c.settings.pricingMode };
@@ -134,16 +155,30 @@
       }
       case 'PURCHASE_META': Object.assign(s.purchaseDraft, { supplier: text(c.supplier), reference: text(c.reference, 80), opening: !!c.opening }); break;
       case 'PURCHASE_LINE': {
-        const p = s.products.find(p => p.id === c.line.productId);
-        assert(p?.active, 'Scan an active registered product.');
-        const l = c.line; integer(l.qty, 'quantity', 1000000); assert(l.qty > 0, 'Quantity must be at least one.');
-        assert(l.dp > 0 && l.mrp > 0, 'DP and MRP must be greater than zero.');
-        integer(l.dp, 'DP'); integer(l.mrp, 'MRP'); integer(l.gstBps, 'GST rate', 10000);
-        assert(!l.expiry || validDate(l.expiry), 'Enter a valid expiry date.');
-        assert(!p.expiryRequired || l.expiry, 'This product requires an expiry date.');
-        assert(!l.expiry || l.expiry >= day(now), 'Expired stock cannot be received as saleable stock.');
-        s.purchaseDraft.lines.push({ id: id(), productId: p.id, name: p.name, barcode: p.barcode, pack: p.pack,
-          qty: l.qty, dp: l.dp, mrp: l.mrp, gstBps: l.gstBps, batch: text(l.batch, 80) || 'Unspecified', expiry: l.expiry || '' }); break;
+        s.purchaseDraft.lines.push(purchaseInput(s, c.line, now)); break;
+      }
+      case 'IMPORT_PURCHASE_LINES': {
+        assert(Array.isArray(c.lines) && c.lines.length > 0 && c.lines.length <= 500, 'Import between 1 and 500 stock rows at a time.');
+        const imported = c.lines.map(line => purchaseInput(s, line, now));
+        s.purchaseDraft.lines.push(...imported); break;
+      }
+      case 'IMPORT_CATALOGUE_PRODUCTS': {
+        assert(Array.isArray(c.products) && c.products.length > 0 && c.products.length <= 500, 'Import between 1 and 500 catalogue products at a time.');
+        const imported = c.products.map(product => {
+          const input = productInput(product, true);
+          assert(!input.barcode && input.catalogCode, 'Catalogue imports must not invent physical pack barcodes.');
+          return input;
+        });
+        const codes = new Set();
+        for (const product of imported) {
+          assert(!codes.has(product.catalogCode), 'CSV contains a duplicate catalogue code.');
+          assert(!s.products.some(existing => existing.catalogCode === product.catalogCode), `Catalogue product ${product.catalogCode} is already registered.`);
+          codes.add(product.catalogCode);
+        }
+        const saved = imported.map(input => ({ ...input, id: id(), updated: now }));
+        s.products.push(...saved);
+        audit('CATALOGUE_PRODUCTS_IMPORTED', 'catalogue', { count: saved.length, codes: saved.map(product => product.catalogCode) });
+        break;
       }
       case 'REMOVE_PURCHASE_LINE': s.purchaseDraft.lines = s.purchaseDraft.lines.filter(l => l.id !== c.id); break;
       case 'CLEAR_PURCHASE': s.purchaseDraft = fresh().purchaseDraft; break;
@@ -255,12 +290,12 @@
     assert(s && s.schema === 1, 'Unsupported backup format.');
     integer(s.revision, 'backup version');
     for (const key of ['products','lots','purchases','sales','returns','movements','audit']) assert(Array.isArray(s[key]), `Backup missing ${key}.`);
-    assert(s.settings && ['markup','margin'].includes(s.settings.pricingMode), 'Invalid backup settings.');
+    assert(s.settings && ['dp','markup','margin'].includes(s.settings.pricingMode), 'Invalid backup settings.');
     const productIds = new Set(), codes = new Set(), lotIds = new Set(), catalogCodes = new Set();
-    s.products.forEach(p => { productInput(p); assert(typeof p.id === 'string' && !productIds.has(p.id) && !codes.has(p.barcode), 'Duplicate product in backup.');
+    s.products.forEach(p => { productInput(p, true); assert(typeof p.id === 'string' && !productIds.has(p.id) && (!p.barcode || !codes.has(p.barcode)), 'Duplicate product in backup.');
       const catalogKey = String(p.catalogCode || '').trim().toUpperCase();
       assert(!catalogKey || !catalogCodes.has(catalogKey), 'Duplicate catalogue link in backup.');
-      if(catalogKey)catalogCodes.add(catalogKey); productIds.add(p.id); codes.add(p.barcode); });
+      if(catalogKey)catalogCodes.add(catalogKey); productIds.add(p.id); if(p.barcode)codes.add(p.barcode); });
     s.lots.forEach(l => {
       assert(productIds.has(l.productId) && typeof l.id === 'string' && !lotIds.has(l.id) && typeof l.code === 'string' && !codes.has(l.code), 'Invalid batch references.');
       integer(l.qty, 'batch quantity', 1000000); integer(l.quarantine, 'quarantine quantity', 1000000); quote(l, s.settings);
