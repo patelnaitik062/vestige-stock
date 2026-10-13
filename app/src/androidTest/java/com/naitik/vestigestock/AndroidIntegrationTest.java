@@ -124,6 +124,17 @@ public class AndroidIntegrationTest {
             scenario.recreate();
             awaitTrue(scenario,"!!document.querySelector('[data-mode=price]')");
             assertEquals("true",js(scenario,"JSON.parse(Android.loadState()).state.products.some(p=>p.barcode==='TEST-CATALOG-AMLA'&&p.catalogCode==='Y20025')"));
+            js(scenario,"(()=>{const p=VestigeCatalog.items.find(x=>x.code!=='Y20025'),q=x=>'\"'+String(x??'').replace(/\"/g,'\"\"')+'\"',fields=['catalog_code','product_name','pack','category','mrp','dp','gst_percent','distributor_price','pv','bv','hsn','stock'],values=[p.code,p.name,p.pack,p.category,(p.referenceMrp/100).toFixed(2),(p.dp/100).toFixed(2),(p.gstBps/100).toFixed(2),(p.distributorPrice/100).toFixed(2),(p.pv/100).toFixed(2),(p.bv/100).toFixed(2),p.hsn,'0'],text=[fields,values].map(row=>row.map(q).join(',')).join('\\n');window.onNativeEvent({type:'catalogue-import',text});return true})()");
+            awaitTrue(scenario,"!!document.querySelector('[data-action=confirm-catalogue-import]')");
+            js(scenario,"document.querySelector('[data-action=confirm-catalogue-import]').click()");
+            awaitTrue(scenario,"JSON.parse(Android.loadState()).state.products.some(p=>!p.barcode&&p.catalogCode!=='Y20025')");
+            Instrumentation.ActivityMonitor linkMonitor=InstrumentationRegistry.getInstrumentation().addMonitor(ScannerActivity.class.getName(),null,false);
+            try {
+                js(scenario,"document.querySelector('.bottomnav [data-page=products]').click();document.querySelector('[data-action=link-catalog-pack]').click();document.querySelector('[data-action=camera]').click()");
+                Activity linkScanner=InstrumentationRegistry.getInstrumentation().waitForMonitorWithTimeout(linkMonitor,15000);
+                assertNotNull("Native scanner did not open for linking an imported product barcode",linkScanner);
+                InstrumentationRegistry.getInstrumentation().runOnMainSync(linkScanner::finish);
+            } finally { InstrumentationRegistry.getInstrumentation().removeMonitor(linkMonitor); }
         }
     }
     @Test public void multipageInvoiceRendersOnAndroid()throws Exception {

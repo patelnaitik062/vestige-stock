@@ -31,7 +31,7 @@ update. The settings screen and APK filenames read the version from Gradle.
    official server, checks its published SHA-256, and builds/lints the app.
 6. If the build succeeds, the installable file is
    **Vestige-Stock-<versionName>-debug.apk** in the project folder (currently
-   **Vestige-Stock-1.4.0-debug.apk**). Copy it to your phone
+   **Vestige-Stock-1.6.0-debug.apk**). Copy it to your phone
    and open it. Android may ask you to allow installation from the app used to
    open the APK.
 
@@ -68,9 +68,15 @@ history and invoices are retained during updates.
 
 The supplied catalogue PDF uses `VSCAT:` setup QR codes. These are app reference
 identifiers, not manufacturer barcodes. Scan the physical pack first, then its
-matching catalogue QR. No product-name search is added. Existing registered
-products can be linked from their scanned details screen without changing their
-saved prices or stock. Backups preserve catalogue links.
+matching catalogue QR. Billing and stock identification remain scan-first.
+Existing registered products can be linked from their scanned details screen
+without changing their saved prices or stock. Backups preserve catalogue links.
+
+The Products tab also supports searching by name, barcode, pack, category or
+catalogue code; filtering by category and stock status; and exporting the
+filtered inventory as a CSV. The CSV includes saved on-hand quantities and
+unlinked catalogue rows at zero stock. This export is a report, not a restorable
+backup.
 
 Manufacturer barcode mappings and NC are not publicly available. They are not
 guessed or generated. Review the published DP/GST against your purchase invoice.
@@ -151,8 +157,9 @@ it is not a full backup. Full store backups are JSON.
 
 The app includes 233 current official Vestige India reference products at zero
 stock. Physical pack barcodes are never assumed. Existing store data is retained;
-the reference catalogue never creates purchases or sales. Registration and numeric fields use normal controls;
-product identification always uses scanning, with no product-name search.
+the reference catalogue never creates purchases or sales. Registration and numeric fields use normal controls.
+Product identification in billing and receiving always uses scanning; the Products
+tab search only helps browse and filter saved or preloaded records.
 
 ## Scanning and batches
 
@@ -173,6 +180,8 @@ product identification always uses scanning, with no product-name search.
 
 - Home dashboard: sales, purchases, gross profit, stock value and alerts.
 - Today/month/all-time dashboard filters and a seven-day sales chart.
+- Progressive loading for long product and activity lists; the weekly chart
+  aggregates each saved sale once and exposes full weekday labels.
 - Barcode-based registration, editing and price checking.
 - Purchases with multiple scanned receipt lines, batch MRP, expiry and cost.
 - Opening stock, saleable inventory, write-offs and quarantine.
@@ -186,6 +195,9 @@ product identification always uses scanning, with no product-name search.
   styling and escaped user text.
 
 Payment methods are records only: there is no UPI/card payment-gateway integration.
+
+The complete app workflow, including scanning, stock, billing, returns,
+reporting and backup/restore, is shown in the [application flowchart](docs/APP-FLOW.md).
 
 ## Profit and inventory reporting
 

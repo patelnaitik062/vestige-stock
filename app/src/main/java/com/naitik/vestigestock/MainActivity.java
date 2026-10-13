@@ -137,9 +137,9 @@ public final class MainActivity extends ComponentActivity {
         @JavascriptInterface public void ready(){runOnUiThread(()->{ready=true;try{JSONArray events=new JSONArray(prefs().getString("pendingEvents","[]"));prefs().edit().remove("pendingEvents").apply();for(int i=0;i<events.length();i++)emit(events.getJSONObject(i));}catch(Exception ignored){}});}
         @JavascriptInterface public void scanBarcode(String context){runOnUiThread(()->{
             try{JSONObject parsed=new JSONObject(context);String mode=parsed.getString("mode");
-                if(!java.util.Arrays.asList("price","edit","receive","bill","return","adjust","catalog-link").contains(mode))throw new IllegalArgumentException();
+                if(!java.util.Arrays.asList("price","edit","receive","bill","return","adjust","catalog-link","link-product").contains(mode))throw new IllegalArgumentException();
                 prefs().edit().putString("scanContext",context).commit();
-                String prompt="catalog-link".equals(mode)?"Scan the catalogue QR code":"Scan one product or internal batch label";
+                String prompt="catalog-link".equals(mode)?"Scan the catalogue QR code":"link-product".equals(mode)?"Scan the physical pack barcode":"Scan one product or internal batch label";
                 pendingScan=new ScanOptions().setCaptureActivity(ScannerActivity.class).setOrientationLocked(false).setBeepEnabled(true).setBarcodeImageEnabled(false).setPrompt(prompt);
                 if("catalog-link".equals(mode)) pendingScan.setDesiredBarcodeFormats("QR_CODE");
                 else pendingScan.setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES);
@@ -154,6 +154,15 @@ public final class MainActivity extends ComponentActivity {
         @JavascriptInterface public void importStockCsv(){runOnUiThread(()->openStockCsv.launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/*").putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"text/csv","text/comma-separated-values","text/plain","application/vnd.ms-excel"})));}
         @JavascriptInterface public void importCatalogueCsv(){runOnUiThread(()->openCatalogueCsv.launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/*").putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"text/csv","text/comma-separated-values","text/plain","application/vnd.ms-excel"})));}
         @JavascriptInterface public void exportStockTemplate(){if(!beginExport())return;io.execute(()->{try{try(OutputStream out=new FileOutputStream(pendingFile())){out.write("barcode,quantity,batch,expiry,dp,mrp,gst\n".getBytes(StandardCharsets.UTF_8));}chooseDestination("Vestige-Stock-Import-Template.csv","text/csv");}catch(Exception e){exportBusy.set(false);message("Could not create the stock CSV template. Please try again.");}});}
+        @JavascriptInterface public void exportProductsCsv(String csv){
+            if(csv==null||csv.length()>2*1024*1024){message("Product CSV is too large to export. Narrow the product filters and try again.");return;}
+            if(!beginExport())return;
+            io.execute(()->{try{
+                try(OutputStream out=new FileOutputStream(pendingFile())){out.write(csv.getBytes(StandardCharsets.UTF_8));}
+                String date=new java.text.SimpleDateFormat("yyyyMMdd",java.util.Locale.ENGLISH).format(new java.util.Date());
+                chooseDestination("Vestige-Products-"+date+".csv","text/csv");
+            }catch(Exception e){exportBusy.set(false);message("Could not create the product CSV. Your store data is unchanged.");}});
+        }
         @JavascriptInterface public void finishApp(){runOnUiThread(()->finish());}
     }
     @Override protected void onDestroy(){ready=false;if(web!=null){web.removeJavascriptInterface("Android");web.destroy();web=null;}io.shutdown();super.onDestroy();}
