@@ -102,12 +102,14 @@ public class AndroidIntegrationTest {
         }
     }
     @Test public void catalogueLinksPhysicalBarcodeAtZeroStock()throws Exception {
-        Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Instrumentation instrumentation=InstrumentationRegistry.getInstrumentation();
+        instrumentation.getUiAutomation().grantRuntimePermission("com.naitik.vestigestock",Manifest.permission.CAMERA);
+        Context context=instrumentation.getTargetContext();
         try(ActivityScenario<MainActivity> scenario=ActivityScenario.launch(MainActivity.class)) {
             awaitTrue(scenario,"!!document.querySelector('[data-mode=price]')");
             js(scenario,"document.querySelector('.bottomnav [data-page=products]').click()");
             awaitTrue(scenario,"document.body.innerText.includes('233 official products') && document.body.innerText.includes('Preloaded · awaiting setup')");
-            Bitmap screenshot=InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+            Bitmap screenshot=instrumentation.getUiAutomation().takeScreenshot();
             assertNotNull(screenshot);
             try(FileOutputStream out=new FileOutputStream(new File(context.getFilesDir(),"catalogue-products.png"))){screenshot.compress(Bitmap.CompressFormat.PNG,100,out);}
             screenshot.recycle();
@@ -128,13 +130,13 @@ public class AndroidIntegrationTest {
             awaitTrue(scenario,"!!document.querySelector('[data-action=confirm-catalogue-import]')");
             js(scenario,"document.querySelector('[data-action=confirm-catalogue-import]').click()");
             awaitTrue(scenario,"JSON.parse(Android.loadState()).state.products.some(p=>!p.barcode&&p.catalogCode!=='Y20025')");
-            Instrumentation.ActivityMonitor linkMonitor=InstrumentationRegistry.getInstrumentation().addMonitor(ScannerActivity.class.getName(),null,false);
+            Instrumentation.ActivityMonitor linkMonitor=instrumentation.addMonitor(ScannerActivity.class.getName(),null,false);
             try {
                 js(scenario,"document.querySelector('.bottomnav [data-page=products]').click();document.querySelector('[data-action=link-catalog-pack]').click();document.querySelector('[data-action=camera]').click()");
-                Activity linkScanner=InstrumentationRegistry.getInstrumentation().waitForMonitorWithTimeout(linkMonitor,15000);
+                Activity linkScanner=instrumentation.waitForMonitorWithTimeout(linkMonitor,15000);
                 assertNotNull("Native scanner did not open for linking an imported product barcode",linkScanner);
-                InstrumentationRegistry.getInstrumentation().runOnMainSync(linkScanner::finish);
-            } finally { InstrumentationRegistry.getInstrumentation().removeMonitor(linkMonitor); }
+                instrumentation.runOnMainSync(linkScanner::finish);
+            } finally { instrumentation.removeMonitor(linkMonitor); }
         }
     }
     @Test public void multipageInvoiceRendersOnAndroid()throws Exception {
