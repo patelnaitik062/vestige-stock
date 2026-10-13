@@ -8,11 +8,17 @@ dashboard cards, animated sheets, and prominent barcode actions.
 
 GitHub Actions builds and lints this project when application files are pushed to
 `main`, or when **Build Android APK** is run manually from the Actions tab.
-The **Vestige-Stock-build** artifact contains the release APK before signing,
-Android's `apksigner.jar`, package metadata and checksums. An unsigned APK cannot
-be installed: the final downloadable APK must be signed with the owner's private
-key. Signing keys and passwords are never committed or uploaded to this repository.
-The delivered signed APK can be opened directly on an Android 8.0+ phone.
+The **Vestige-Stock-build** artifact contains an installable debug APK, the
+release APK before signing, Android's `apksigner.jar`, package metadata and
+checksums. The debug APK is signed with Android's debug key and can be installed
+for testing. The release APK requires the owner's private signing key; signing
+keys and passwords are never committed or uploaded to this repository.
+
+To build online without Android Studio, open **Actions > Build Android APK >
+Run workflow**, select the version branch, and start the run. Download the
+**Vestige-Stock-build** artifact after it succeeds. Its
+**Vestige-Stock-<versionName>-debug.apk** is directly installable; the release
+APK in the same artifact is unsigned and is for private signing.
 
 Keep the private signing backup for future updates. Reuse the same key and
 application ID, and increase `versionCode` and `versionName` for every app
@@ -243,12 +249,12 @@ confirmed product form -> SQLite save, checks zero stock/no lots, and verifies
 that the catalogue link survives Activity recreation. Existing scanner launch,
 navigation, persistence and invoice/batch-label PDF checks also passed.
 
-**Current source status:** version 1.4.0 (version code 5) adds zero-stock
-catalogue CSV import alongside the 1.3.0 catalogue, pricing plans and stock
-receipt import. This revision has not yet been run through the Node tests or an
-Android build. The older 1.1.0 APK in the project is not this update. Install
-Node.js to run the automated tests and Android Studio with SDK Platform 35 /
-Build Tools 35.0.0 to build the current installable APK using `BUILD-APK.cmd`.
+**Current source status:** version 1.6.0 (version code 7) includes product
+search and stock/category filters, filtered inventory CSV export, the scanner
+link fix, and the complete application flowchart. Its online build and emulator
+test results are recorded in the latest **Build Android APK** GitHub Actions
+run. The debug APK from the `Vestige-Stock-build` artifact is directly
+installable; the release APK requires the owner's signing key.
 
 The 1.1.0 companion catalogue PDF included 253 setup codes and source links;
 the refreshed 1.3.0 listing contains the latest 233 price-complete records.

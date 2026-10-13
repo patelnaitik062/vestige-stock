@@ -336,6 +336,7 @@
     else if(a==='navigate')navigate(el.dataset.page);
     else if(a==='period'){period=el.dataset.value;render();}
     else if(a==='activity-tab'){activityTab=el.dataset.value;activityLimit=30;render();}
+    else if(a==='export-products')exportProductsCsv();
     else if(a==='more-activity'){activityLimit+=30;render();}
     else if(a==='more-products'){productLimit+=60;render();}
     else if(a==='more-catalogue'){catalogueLimit+=30;render();}
