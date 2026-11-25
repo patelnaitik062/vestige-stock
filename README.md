@@ -17,6 +17,14 @@ or uninstalling an existing installation if Android rejects the update; restore
 that backup after installing. The release APK requires the owner's private
 signing key; signing keys and passwords are never committed or uploaded here.
 
+**Upgrade note for 1.7.0:** its online debug APK is signed with a different
+certificate from the 1.6.0 online APK, so Android will not install it over that
+older copy. In 1.6.0, choose **More > Export backup** and save the JSON file;
+uninstall 1.6.0, install 1.7.0, then choose **More > Restore backup**. The app
+database and data schema are compatible, but Android requires matching
+certificates for in-place updates. A persistent owner-controlled signing key is
+not configured for this project.
+
 To build online without Android Studio, open **Actions > Build Android APK >
 Run workflow**, select the version branch, and start the run. Download the
 **Vestige-Stock-build** artifact after it succeeds. Its
