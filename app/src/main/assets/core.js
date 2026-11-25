@@ -157,6 +157,27 @@
       case 'PURCHASE_LINE': {
         s.purchaseDraft.lines.push(purchaseInput(s, c.line, now)); break;
       }
+      case 'QUICK_RECEIVE': {
+        const { product } = resolve(s, c.code);
+        assert(product?.active, 'Scan an active registered product barcode.');
+        integer(c.qty, 'quantity', 1000000); assert(c.qty > 0, 'Quantity must be at least one.');
+        const line = purchaseInput(s, {
+          productId: product.id, qty: c.qty, dp: product.dp, mrp: product.mrp,
+          gstBps: product.gstBps, batch: `Q-${day(now).replace(/-/g, '')}-${String(s.purchases.length + 1).padStart(5, '0')}`,
+          expiry: c.expiry || ''
+        }, now);
+        const purchaseId = id(), lotId = id();
+        const lot = { id: lotId, code: `VSLOT-${lotId}`, productId: line.productId, batch: line.batch, expiry: line.expiry,
+          dp: line.dp, mrp: line.mrp, gstBps: line.gstBps, qty: line.qty, received: line.qty, quarantine: 0, created: now, purchaseId };
+        const savedLine = { ...line, lotId, lotCode: lot.code, costInclusive: quote(line, s.settings).costInclusive };
+        s.lots.push(lot);
+        s.purchases.push({ id: purchaseId, requestId: id(), number: `PUR-${String(s.purchases.length + 1).padStart(5, '0')}`,
+          time: now, supplier: 'Quick barcode add', reference: '', opening: false, lines: [savedLine],
+          total: savedLine.costInclusive * savedLine.qty });
+        movement(lot, line.qty, 'PURCHASE', purchaseId);
+        audit('PURCHASE_POSTED', purchaseId, { amount: savedLine.costInclusive * savedLine.qty, quickAdd: true });
+        break;
+      }
       case 'IMPORT_PURCHASE_LINES': {
         assert(Array.isArray(c.lines) && c.lines.length > 0 && c.lines.length <= 500, 'Import between 1 and 500 stock rows at a time.');
         const imported = c.lines.map(line => purchaseInput(s, line, now));
@@ -211,6 +232,17 @@
         if (current) current.qty++;
         else s.saleDraft.lines.push({ id: id(), lotId: lot.id, productId: product.id, name: product.name, pack: product.pack,
           barcode: product.barcode, batch: lot.batch, qty: 1, quote: q });
+        break;
+      }
+      case 'ADD_SALE_QTY': {
+        const { product, lot } = chooseLot(s, c.code, now), q = sellingQuote(s, lot);
+        integer(c.qty, 'quantity', 1000000); assert(c.qty > 0, 'Quantity must be at least one.');
+        assert(!q.overMrp, 'Calculated selling price exceeds this batch MRP. Correct its prices before billing.');
+        const current = s.saleDraft.lines.find(l => l.lotId === lot.id);
+        assert((current?.qty || 0) + c.qty <= lot.qty, 'Not enough stock in this batch.');
+        if (current) current.qty += c.qty;
+        else s.saleDraft.lines.push({ id: id(), lotId: lot.id, productId: product.id, name: product.name, pack: product.pack,
+          barcode: product.barcode, batch: lot.batch, qty: c.qty, quote: q });
         break;
       }
       case 'SET_SALE_QTY': {

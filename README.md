@@ -11,8 +11,11 @@ GitHub Actions builds and lints this project when application files are pushed t
 The **Vestige-Stock-build** artifact contains an installable debug APK, the
 release APK before signing, Android's `apksigner.jar`, package metadata and
 checksums. The debug APK is signed with Android's debug key and can be installed
-for testing. The release APK requires the owner's private signing key; signing
-keys and passwords are never committed or uploaded to this repository.
+on a device. In-place Android updates also require the APK to have the same
+signing certificate as the installed app. Export a JSON backup before replacing
+or uninstalling an existing installation if Android rejects the update; restore
+that backup after installing. The release APK requires the owner's private
+signing key; signing keys and passwords are never committed or uploaded here.
 
 To build online without Android Studio, open **Actions > Build Android APK >
 Run workflow**, select the version branch, and start the run. Download the
@@ -20,9 +23,10 @@ Run workflow**, select the version branch, and start the run. Download the
 **Vestige-Stock-<versionName>-debug.apk** is directly installable; the release
 APK in the same artifact is unsigned and is for private signing.
 
-Keep the private signing backup for future updates. Reuse the same key and
-application ID, and increase `versionCode` and `versionName` for every app
-update. The settings screen and APK filenames read the version from Gradle.
+Increase `versionCode` and `versionName` for every app update. The settings
+screen and APK filenames read the version from Gradle. The SQLite database
+identity and saved-state schema are unchanged in 1.7.0; data remains in place
+when Android accepts it as an update. Always export a backup before uninstalling.
 
 ## Build the Android APK on Windows
 
@@ -37,7 +41,7 @@ update. The settings screen and APK filenames read the version from Gradle.
    official server, checks its published SHA-256, and builds/lints the app.
 6. If the build succeeds, the installable file is
    **Vestige-Stock-<versionName>-debug.apk** in the project folder (currently
-   **Vestige-Stock-1.6.0-debug.apk**). Copy it to your phone
+   **Vestige-Stock-1.7.0-debug.apk**). Copy it to your phone
    and open it. Android may ask you to allow installation from the app used to
    open the APK.
 
@@ -136,6 +140,14 @@ rows, unknown/inactive product barcodes, malformed quantities, bad dates, and
 oversized files do not partially change the receipt. Review and confirm the
 resulting receipt to add stock.
 
+For a fast one-scan receipt, open **Receive stock > Scan to add stock**, scan a
+registered pack barcode, and enter the quantity. The app immediately records a
+receipt and creates a batch using the product's saved DP, GST and MRP. Products
+marked as expiry-tracked still ask for the printed expiry date. Use the reviewed
+CSV import when the supplier invoice or physical batch has different DP, MRP,
+expiry or batch details; the quick flow intentionally does not ask for those
+fields.
+
 To import the published catalogue with no stock, select **Products > Import
 zero-stock catalogue CSV** and choose
 `Vestige-Product-Catalogue-Import-2026-10-10.csv`. Review the preview before
@@ -152,14 +164,16 @@ it is not a full backup. Full store backups are JSON.
    on another screen or a printed page. Review the name/pack, DP, MRP, GST, PV,
    BV and HSN. Saving leaves stock at zero. Unlisted products can still be
    registered from their scanned pack barcode.
-3. Open **Receive stock**. Scan the product and enter quantity, actual purchase
-   DP, printed batch MRP, batch number and expiry, or import a reviewed CSV.
-4. Scan any other incoming products and **Confirm receipt**. Mark existing stock
-   as an **opening balance** so it does not inflate purchases in reports.
-5. Use **Check price** on Home to scan and display selling price/MRP.
-6. Open **Billing**, scan products, review quantities, and complete the bill
-   after collecting payment. Use **Save PDF invoice** to choose a destination.
-7. Open **Activity** to re-export old bills or review receipts.
+3. Open **Receive stock**. Scan a product and enter quantity for an immediate
+   quick receipt at its saved DP/GST/MRP, or import a reviewed CSV to enter
+   invoice-specific DP, batch MRP, batch number and expiry. For opening stock,
+   import the CSV and mark it as an **opening balance** when confirming receipt.
+4. Use **Check price** on Home to scan and display selling price/MRP.
+5. Open **Billing**, scan a product and enter its quantity. The selected selling
+   plan determines the price; the app adds no extra margin during receipt.
+   Review the bill and complete it after collecting payment. Use **Save PDF
+   invoice** to choose a destination.
+6. Open **Activity** to re-export old bills or review receipts.
 
 The app includes 233 current official Vestige India reference products at zero
 stock. Physical pack barcodes are never assumed. Existing store data is retained;
@@ -189,7 +203,10 @@ tab search only helps browse and filter saved or preloaded records.
 - Progressive loading for long product and activity lists; the weekly chart
   aggregates each saved sale once and exposes full weekday labels.
 - Barcode-based registration, editing and price checking.
-- Purchases with multiple scanned receipt lines, batch MRP, expiry and cost.
+- One-scan quantity-only stock receipts with saved DP/GST/MRP; CSV receipts for
+  invoice-specific batch details.
+- Barcode billing with quantity entry, selected-plan pricing and batch-stock
+  validation.
 - Opening stock, saleable inventory, write-offs and quarantine.
 - Saved billing drafts, quantities, Cash/UPI/Card payment-method records.
 - Atomic invoice/stock completion and duplicate-completion protection.
@@ -249,12 +266,12 @@ confirmed product form -> SQLite save, checks zero stock/no lots, and verifies
 that the catalogue link survives Activity recreation. Existing scanner launch,
 navigation, persistence and invoice/batch-label PDF checks also passed.
 
-**Current source status:** version 1.6.0 (version code 7) includes product
-search and stock/category filters, filtered inventory CSV export, the scanner
-link fix, and the complete application flowchart. Its online build and emulator
-test results are recorded in the latest **Build Android APK** GitHub Actions
-run. The debug APK from the `Vestige-Stock-build` artifact is directly
-installable; the release APK requires the owner's signing key.
+**Current source status:** version 1.7.0 (version code 8) adds quantity-only
+barcode receiving and billing; barcode sales apply the selected pricing plan
+once, and the existing SQLite database identity and state schema are unchanged.
+The debug APK from the **Vestige-Stock-build** workflow artifact is directly
+installable. In-place updates require matching signing certificates; export a
+JSON backup before uninstalling an older installation.
 
 The 1.1.0 companion catalogue PDF included 253 setup codes and source links;
 the refreshed 1.3.0 listing contains the latest 233 price-complete records.
@@ -274,9 +291,9 @@ inventory or demonstration stock is preloaded.
   workflow (HSN/SAC, place of supply, CGST/SGST/IGST allocation, etc.) has not been
   implemented. Enter actual product rates; review receipt requirements for your
   business before using it as a tax invoice.
-- The delivered file is a signed release APK for direct installation. It has
-  not been submitted to Google Play. Keep the same application ID and signing
-  key for future updates, and back up before installing updates.
+- The delivered file is an installable debug APK. It has not been submitted to
+  Google Play. Keep the same application ID and signing key for seamless
+  updates, and back up before uninstalling/reinstalling.
 
 See `docs/DEVICE-CHECKLIST.md` for the remaining checks.
 

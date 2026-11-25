@@ -30,17 +30,19 @@ flowchart TD
     R1 -- Scan product --> SC
     R1 -- Import stock CSV --> R2[Validate entire file and preview]
     R2 -- Invalid --> R3[Show error; preserve receipt draft]
-    R2 -- Valid --> R4[Append all rows to saved receipt draft]
-    R1 -- Opening balance --> R5[Mark received existing stock as opening stock]
-    R4 --> R6[Review quantities, batch, expiry, purchase DP and MRP]
-    R5 --> R6
+    R2 -- Valid --> R4[Add validated rows to receipt draft]
+    R4 --> R6[Review quantity, batch, expiry, DP and MRP]
     R6 -- Confirm receipt --> V[Validate domain operation]
-    R6 -- Cancel --> R
+    R6 -- Mark opening balance --> R5[Exclude opening stock from purchase totals]
+    R5 --> V
+    R4 -- Cancel --> R
 
-    S --> S1[Scan products; saved draft accumulates quantities]
-    S1 --> S2[Review batches, selling plan, customer and payment record]
-    S2 -- Complete bill --> V
-    S2 -- Cancel or continue later --> S
+    S --> S1[Scan product barcode]
+    S1 --> S2[Enter quantity; selected selling plan sets GST-inclusive price]
+    S2 --> S3[Add quantity to saved bill draft]
+    S3 --> S4[Review batches, selling plan, customer and payment record]
+    S4 -- Complete bill --> V
+    S4 -- Cancel or continue later --> S
 
     SC --> N[Android validates scan mode and camera permission]
     N -- Permission denied or invalid mode --> N0[Show error; no inventory change]
@@ -53,8 +55,9 @@ flowchart TD
     N6 --> N7{Requested scan mode}
     N7 -- Price --> H
     N7 -- Add, edit or link product --> N5
-    N7 -- Receive --> R6
-    N7 -- Bill --> S1
+    N7 -- Receive --> RQ[Enter quantity; use saved DP, GST and MRP]
+    RQ --> V
+    N7 -- Bill --> S2
     N7 -- Return --> N8[Match original bill and available return quantity]
     N7 -- Write-off --> N9[Choose batch, quantity and reason; move units to quarantine]
     N8 --> V
@@ -79,7 +82,8 @@ flowchart TD
     V2 --> E
     V1 -- Yes --> W[Atomically persist state with revision check]
     W --> W1{Saved operation}
-    W1 -- Receipt, product or adjustment --> P
+    W1 -- Quick receipt, product or adjustment --> P
+    W1 -- Reviewed CSV receipt --> R
     W1 -- Bill or return --> T
     W1 -- Settings --> M
     W1 -- Backup restore --> D
